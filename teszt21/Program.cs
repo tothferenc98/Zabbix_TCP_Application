@@ -24,7 +24,7 @@ using Newtonsoft.Json;
 // TODO: logolás
 #endregion
 
-namespace teszt21
+namespace Zabbix_TCP_Application
 {
     class Program
     {
@@ -35,10 +35,11 @@ namespace teszt21
         const int ZABBIX_PORT = 10051;
         const int CONNECT_DELAY = 5;
         #endregion konstansok
+        
 
         static void Main(string[] args)
         {
-
+            
             while (true)
             {
                 var clock = DateTimeOffset.Now.ToUnixTimeSeconds();
@@ -48,43 +49,40 @@ namespace teszt21
                 string agentHostname = String.Format("{{\"host\":\"{0}\",\"key\":\"agent.hostname\",\"value\":\"{0}\",\"id\":1,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
                 string agentPing = String.Format("{{\"host\":\"{0}\",\"key\":\"agent.ping\",\"value\":\"1\",\"id\":2,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
                 string agentVersion = String.Format("{{\"host\":\"{0}\",\"key\":\"agent.version\",\"value\":\"TCP_program\",\"id\":3,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
-
-
-                string eventlogSystemMicrosoftWindowsKernelPower = String.Format("{{\"host\":\"gyakornok_tf_app\",\"key\":\"eventlog[System,,,\"Microsoft-Windows-Kernel-Power\"]\",\"value\":\"A felhaszn..l..i ..zemm..d.. folyamat megpr..b..lta m..dos..tani a rendszer..llapotot a SetSuspendState vagy a SetSystemPowerState API h..v..s..val.\",\"lastlogsize\":10815,\"timestamp\":1624900534,\"source\":\"Microsoft-Windows-Kernel-Power\",\"severity\":1,\"eventid\":187,\"id\":4,\"clock\":1624960474,\"ns\":186056600}}");
-                string netIfList = String.Format("{{\"host\":\"gyakornok_tf_app\",\"key\":\"net.if.list\",\"value\":\"Ethernet                  enabled  - Realtek PCIe GbE Family Controller-WFP Native MAC Layer LightWeight Filter-0000\nEthernet                  enabled  - Realtek PCIe GbE Family Controller-Npcap Packet Driver (NPCAP)-0000\nEthernet                  enabled  - Realtek PCIe GbE Family Controller-VirtualBox NDIS Light-Weight Filter-0000\nEthernet                  enabled  - Realtek PCIe GbE Family Controller-QoS Packet Scheduler-0000\nEthernet                  enabled  - Realtek PCIe GbE Family Controller-WFP 802.3 MAC Layer LightWeight Filter-0000\nEthernet                  enabled  - WAN Miniport (IP)-WFP Native MAC Layer LightWeight Filter-0000\nEthernet                  enabled  - WAN Miniport (IP)-Npcap Packet Driver (NPCAP)-0000\nEthernet                  enabled  - WAN Miniport (IP)-QoS Packet Scheduler-0000\nEthernet                  enabled  - WAN Miniport (IPv6)-WFP Native MAC Layer LightWeight Filter-0000\nEthernet                  enabled  - WAN Miniport (IPv6)-Npcap Packet Driver (NPCAP)-0000\nEthernet                  enabled  - WAN Miniport (IPv6)-QoS Packet Scheduler-0000\nEthernet                  enabled  - WAN Miniport (Network Monitor)-WFP Native MAC Layer LightWeight Filter-0000\nEthernet                  enabled  - WAN Miniport (Network Monitor)-Npcap Packet Driver (NPCAP)-0000\nEthernet                  enabled  - WAN Miniport (Network Monitor)-QoS Packet Scheduler-0000\nEthernet                  unknown  - Microsoft Kernel Debug Network Adapter\nEthernet                  enabled  - Realtek PCIe GbE Family Controller\nEthernet                  unknown  - Bluetooth Device (Personal Area Network)\nEthernet                  enabled  - WAN Miniport (IP)\nEthernet                  enabled  - WAN Miniport (IPv6)\nEthernet                  enabled  - WAN Miniport (Network Monitor)\nEthernet                  unknown  - VirtualBox Host-Only Ethernet Adapter\nPPP                       enabled  - WAN Miniport (PPPOE)\nSoftware Loopback         enabled  127.0.0.1       Software Loopback Interface 1\nIEEE 802.11 Wireless      enabled  - Realtek 8821AE Wireless LAN 802.11ac PCI-E NIC-WFP Native MAC Layer LightWeight Filter-0000\nIEEE 802.11 Wireless      enabled  - Realtek 8821AE Wireless LAN 802.11ac PCI-E NIC-Npcap Packet Driver (NPCAP) (WiFi version)-0000\nIEEE 802.11 Wireless      enabled  - Realtek 8821AE Wireless LAN 802.11ac PCI-E NIC-Virtual WiFi Filter Driver-0000\nIEEE 802.11 Wireless      enabled  - Realtek 8821AE Wireless LAN 802.11ac PCI-E NIC-Native WiFi Filter Driver-0000\nIEEE 802.11 Wireless      enabled  - Realtek 8821AE Wireless LAN 802.11ac PCI-E NIC-Npcap Packet Driver (NPCAP)-0000\nIEEE 802.11 Wireless      enabled  - Realtek 8821AE Wireless LAN 802.11ac PCI-E NIC-VirtualBox NDIS Light-Weight Filter-0000\nIEEE 802.11 Wireless      enabled  - Realtek 8821AE Wireless LAN 802.11ac PCI-E NIC-QoS Packet Scheduler-0000\nIEEE 802.11 Wireless      enabled  - Realtek 8821AE Wireless LAN 802.11ac PCI-E NIC-WFP 802.3 MAC Layer LightWeight Filter-0000\nIEEE 802.11 Wireless      enabled  - Microsoft Wi-Fi Direct Virtual Adapter-WFP Native MAC Layer LightWeight Filter-0000\nIEEE 802.11 Wireless      enabled  - Microsoft Wi-Fi Direct Virtual Adapter-Npcap Packet Driver (NPCAP) (WiFi version)-0000\nIEEE 802.11 Wireless      enabled  - Microsoft Wi-Fi Direct Virtual Adapter-Native WiFi Filter Driver-0000\nIEEE 802.11 Wireless      enabled  - Microsoft Wi-Fi Direct Virtual Adapter-Npcap Packet Driver (NPCAP)-0000\nIEEE 802.11 Wireless      enabled  - Microsoft Wi-Fi Direct Virtual Adapter-VirtualBox NDIS Light-Weight Filter-0000\nIEEE 802.11 Wireless      enabled  - Microsoft Wi-Fi Direct Virtual Adapter-QoS Packet Scheduler-0000\nIEEE 802.11 Wireless      enabled  - Microsoft Wi-Fi Direct Virtual Adapter-WFP 802.3 MAC Layer LightWeight Filter-0000\nIEEE 802.11 Wireless      enabled  - Microsoft Wi-Fi Direct Virtual Adapter #2-WFP Native MAC Layer LightWeight Filter-0000\nIEEE 802.11 Wireless      enabled  - Microsoft Wi-Fi Direct Virtual Adapter #2-Npcap Packet Driver (NPCAP) (WiFi version)-0000\nIEEE 802.11 Wireless      enabled  - Microsoft Wi-Fi Direct Virtual Adapter #2-Native WiFi Filter Driver-0000\nIEEE 802.11 Wireless      enabled  - Microsoft Wi-Fi Direct Virtual Adapter #2-Npcap Packet Driver (NPCAP)-0000\nIEEE 802.11 Wireless      enabled  - Microsoft Wi-Fi Direct Virtual Adapter #2-VirtualBox NDIS Light-Weight Filter-0000\nIEEE 802.11 Wireless      enabled  - Microsoft Wi-Fi Direct Virtual Adapter #2-QoS Packet Scheduler-0000\nIEEE 802.11 Wireless      enabled  - Microsoft Wi-Fi Direct Virtual Adapter #2-WFP 802.3 MAC Layer LightWeight Filter-0000\nIEEE 802.11 Wireless      enabled  192.168.1.100   Realtek 8821AE Wireless LAN 802.11ac PCI-E NIC\nIEEE 802.11 Wireless      enabled  - Microsoft Wi-Fi Direct Virtual Adapter\nIEEE 802.11 Wireless      enabled  - Microsoft Wi-Fi Direct Virtual Adapter #2\nTunnel type encapsulation unknown  - Microsoft Teredo Tunneling Adapter\nTunnel type encapsulation unknown  - Microsoft IP-HTTPS Platform Adapter\nTunnel type encapsulation unknown  - Microsoft 6to4 Adapter\nTunnel type encapsulation enabled  - WAN Miniport (SSTP)\nTunnel type encapsulation enabled  - WAN Miniport (IKEv2)\nTunnel type encapsulation enabled  - WAN Miniport (L2TP)\nTunnel type encapsulation enabled  - WAN Miniport (PPTP)\n\",\"id\":8,\"clock\":1624960474,\"ns\":238679600}}");
-                string perfCounter234Total1402 = String.Format("{{\"host\":\"gyakornok_tf_app\",\"key\":\"perf_counter[\\234(_Total)\\1402]\",\"value\":\"0.019797\",\"id\":9,\"clock\":1624960475,\"ns\":252629400}}"); //Average disk read queue length
-                string perfCounter234Total1404 = String.Format("{{\"host\":\"gyakornok_tf_app\",\"key\":\"perf_counter[\\234(_Total)\\1404]\",\"value\":\"0.006441\",\"id\":10,\"clock\":1624960476,\"ns\":260388900}}"); //Average disk write queue length
-                string perfCounter2_16 = String.Format("{{\"host\":\"gyakornok_tf_app\",\"key\":\"perf_counter[\\2\\16]\",\"value\":\"17219.955967\",\"id\":11,\"clock\":1624960477,\"ns\":276593400}}"); //File read bytes per second
-                string perfCounter2_18 = String.Format("{{\"host\":\"gyakornok_tf_app\",\"key\":\"perf_counter[\\2\\18]\",\"value\":\"113342.473095\",\"id\":12,\"clock\":1624960478,\"ns\":288443500}}"); //File write bytes per second
-                string perfCounter2_250 = String.Format("{{\"host\":\"gyakornok_tf_app\",\"key\":\"perf_counter[\\2\\250]\",\"value\":\"2906.000000\",\"id\":13,\"clock\":1624960478,\"ns\":291858000}}");
-                string procNum = String.Format("{{\"host\":\"gyakornok_tf_app\",\"key\":\"proc.num[]\",\"value\":\"247\",\"id\":14,\"clock\":1624960478,\"ns\":299047600}}");
-                string systemCpuLoadPerCpuAvg1 = String.Format("{{\"host\":\"gyakornok_tf_app\",\"key\":\"system.cpu.load[percpu,avg1]\",\"value\":\"0.000000\",\"id\":15,\"clock\":1624960478,\"ns\":299154200}}");
-                string systemCpuLoadPerCpuAvg5 = String.Format("{{\"host\":\"gyakornok_tf_app\",\"key\":\"system.cpu.load[percpu,avg5]\",\"value\":\"0.000000\",\"id\":16,\"clock\":1624960478,\"ns\":299159800}}");
-                string systemLocaltimeUtc = String.Format("{{\"host\":\"gyakornok_tf_app\",\"key\":\"system.localtime[utc]\",\"value\":\"1624960478\",\"id\":17,\"clock\":1624960478,\"ns\":299168100}}");
-                string systemRunIpconfigFindstrIPv4sort = String.Format("{{\"host\":\"gyakornok_tf_app\",\"key\":\"system.run[ipconfig | findstr IPv4 | sort]\",\"value\":\"Unsupported item key.\",\"state\":1,\"id\":18,\"clock\":1624960478,\"ns\":300200600}}");
-                string systemRunSysteminfo = String.Format("{{\"host\":\"gyakornok_tf_app\",\"key\":\"system.run[systeminfo,]\",\"value\":\"Unsupported item key.\",\"state\":1,\"id\":19,\"clock\":1624960478,\"ns\":301352900}}");
-                string systemSwapSizeFree = String.Format("{{\"host\":\"gyakornok_tf_app\",\"key\":\"system.swap.size[,free]\",\"value\":\"1971662848\",\"id\":20,\"clock\":1624960478,\"ns\":301386100}}");
-                string systemSwapSizeTotal = String.Format("{{\"host\":\"gyakornok_tf_app\",\"key\":\"system.swap.size[,total]\",\"value\":\"5637144576\",\"id\":21,\"clock\":1624960478,\"ns\":301394100}}");
-                string systemUname = String.Format("{{\"host\":\"gyakornok_tf_app\",\"key\":\"system.uname\",\"value\":\"Windows DESKTOP-H8HU6UC 10.0.19042 Microsoft Windows 10 Pro x64\",\"id\":22,\"clock\":1624960478,\"ns\":417437700}}");
-                string systemUptime = String.Format("{{\"host\":\"gyakornok_tf_app\",\"key\":\"system.uptime\",\"value\":\"609411\",\"id\":23,\"clock\":1624960478,\"ns\":420357000}}");
-                string vmMemorySizeFree = String.Format("{{\"host\":\"gyakornok_tf_app\",\"key\":\"vm.memory.size[free]\",\"value\":\"2073059328\",\"id\":24,\"clock\":1624960478,\"ns\":420366000}}");
-                string vmMemorySizeTotal = String.Format("{{\"host\":\"gyakornok_tf_app\",\"key\":\"vm.memory.size[total]\",\"value\":\"8477478912\",\"id\":25,\"clock\":1624960478,\"ns\":420369200}}");
+                
+                string eventlogSystemMicrosoftWindowsKernelPower = String.Format("{{\"host\":\"{0}\",\"key\":\"eventlog[System,,,\\\"Microsoft-Windows-Kernel-Power\\\"]\",\"value\":\"A felhaszn..l..i ..zemm..d.. folyamat megpr..b..lta m..dos..tani a rendszer..llapotot a SetSuspendState vagy a SetSystemPowerState API h..v..s..val.\",\"lastlogsize\":10815,\"timestamp\":1624900534,\"source\":\"Microsoft-Windows-Kernel-Power\",\"severity\":1,\"eventid\":187,\"id\":4,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
+                string netIfList = String.Format("{{\"host\":\"{0}\",\"key\":\"net.if.list\",\"value\":\"Teszt\",\"id\":8,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
+                string perfCounter234Total1402 = String.Format("{{\"host\":\"{0}\",\"key\":\"perf_counter[\\\\234(_Total)\\\\1402]\",\"value\":\"0.019797\",\"id\":9,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns); //Average disk read queue length
+                string perfCounter234Total1404 = String.Format("{{\"host\":\"{0}\",\"key\":\"perf_counter[\\\\234(_Total)\\\\1404]\",\"value\":\"0.006441\",\"id\":10,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns); //Average disk write queue length
+                string perfCounter2_16 = String.Format("{{\"host\":\"{0}\",\"key\":\"perf_counter[\\\\2\\\\16]\",\"value\":\"17219.955967\",\"id\":11,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns); //File read bytes per second
+                string perfCounter2_18 = String.Format("{{\"host\":\"{0}\",\"key\":\"perf_counter[\\\\2\\\\18]\",\"value\":\"113342.473095\",\"id\":12,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns); //File write bytes per second
+                string perfCounter2_250 = String.Format("{{\"host\":\"{0}\",\"key\":\"perf_counter[\\\\2\\\\250]\",\"value\":\"2906.000000\",\"id\":13,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
+                string procNum = String.Format("{{\"host\":\"{0}\",\"key\":\"proc.num[]\",\"value\":\"{3}\",\"id\":14,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetProcessNumber());
+                string systemCpuLoadPerCpuAvg1 = String.Format("{{\"host\":\"{0}\",\"key\":\"system.cpu.load[percpu,avg1]\",\"value\":\"0.000000\",\"id\":15,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
+                string systemCpuLoadPerCpuAvg5 = String.Format("{{\"host\":\"{0}\",\"key\":\"system.cpu.load[percpu,avg5]\",\"value\":\"0.000000\",\"id\":16,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
+                string systemLocaltimeUtc = String.Format("{{\"host\":\"{0}\",\"key\":\"system.localtime[utc]\",\"value\":\"{1}\",\"id\":17,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
+                string systemRunIpconfigFindstrIPv4sort = String.Format("{{\"host\":\"{0}\",\"key\":\"system.run[ipconfig | findstr IPv4 | sort]\",\"value\":\"Unsupported item key.\",\"state\":1,\"id\":18,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
+                string systemRunSysteminfo = String.Format("{{\"host\":\"{0}\",\"key\":\"system.run[systeminfo,]\",\"value\":\"Unsupported item key.\",\"state\":1,\"id\":19,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
+                string systemSwapSizeFree = String.Format("{{\"host\":\"{0}\",\"key\":\"system.swap.size[,free]\",\"value\":\"1971662848\",\"id\":20,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
+                string systemSwapSizeTotal = String.Format("{{\"host\":\"{0}\",\"key\":\"system.swap.size[,total]\",\"value\":\"5637144576\",\"id\":21,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
+                string systemUname = String.Format("{{\"host\":\"{0}\",\"key\":\"system.uname\",\"value\":\"{3}\",\"id\":22,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetSystemUname());
+                string systemUptime = String.Format("{{\"host\":\"{0}\",\"key\":\"system.uptime\",\"value\":\"609411\",\"id\":23,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
+                string vmMemorySizeFree = String.Format("{{\"host\":\"{0}\",\"key\":\"vm.memory.size[free]\",\"value\":\"{3}\",\"id\":24,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetAvailableMemoryInBytes());
+                string vmMemorySizeTotal = String.Format("{{\"host\":\"{0}\",\"key\":\"vm.memory.size[total]\",\"value\":\"{3}\",\"id\":25,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetTotalMemoryInBytes());
 
                 #endregion stringek
-
-                //Console.WriteLine(agentVersion);
-                //Console.ReadLine();
-
-                //string message = "{\"request\":\"agent data\",\"session\":\"2dcf1bf2f6fc1c742812fbbf491e24f2\",\"data\":[" + agentHostname + "," + agentPing + "," + agentVersion + "],\"clock\":" + clock + ",\"ns\":" + ns + "}";
-                string message = "{\"request\":\"active checks\",\"host\":\"gyakornok_tf_app\"}";
-
                 
-                byte[] packet = Packet(message);
+                Console.WriteLine();
+                Console.ReadLine();
 
-                foreach (var item in packet)
-                {
-                    //Console.WriteLine(item);
-                }
+                string message = "{\"request\":\"agent data\",\"session\":\"2dcf1bf2f6fc1c742812fbbf491e24f2\",\"data\":[" 
+                    + agentHostname + "," + agentPing + "," + agentVersion + "," + eventlogSystemMicrosoftWindowsKernelPower + "," + netIfList + "," + perfCounter234Total1402 + "," + perfCounter234Total1404 +
+                    "," + perfCounter2_16 + "," + perfCounter2_18 + "," + perfCounter2_250 + "," + procNum + "," + systemCpuLoadPerCpuAvg1 + "," + systemCpuLoadPerCpuAvg5 + "," + systemLocaltimeUtc +
+                     "," + systemRunIpconfigFindstrIPv4sort + "," + systemRunSysteminfo + "," + systemSwapSizeFree + "," + systemSwapSizeTotal + "," + systemUname + "," + systemUptime + "," + vmMemorySizeFree + "," + vmMemorySizeTotal +
+                    "],\"clock\":" + clock + ",\"ns\":" + ns + "}";
+                //string message = "{\"request\":\"active checks\",\"host\":\"gyakornok_tf_app\"}";
+
+                byte[] packet = Packet(message);
 
                 string responseData = "";
                 try
@@ -99,12 +97,12 @@ namespace teszt21
                 Console.WriteLine("Received: {0}\n", responseData);
                 
 
-                // TODO: Most active check-re működik, a request válaszát is elemezni kell jsonnal
-                List<JsonClass> jsonData = JsonConvert.DeserializeObject<List<JsonClass>>(ActiveCheckFilter(responseData));
+                // active check-re működik
+                /*List<JsonClass> jsonData = JsonConvert.DeserializeObject<List<JsonClass>>(ActiveCheckFilter(responseData));
                 foreach (var item in jsonData)
                 {
                     Console.WriteLine(item.key);
-                }
+                }*/
 
                 System.Threading.Thread.Sleep(CONNECT_DELAY*1000);
                 
@@ -219,5 +217,34 @@ namespace teszt21
                 return "";
             }
         }
+
+        static ulong GetTotalMemoryInBytes()
+        {
+            return new Microsoft.VisualBasic.Devices.ComputerInfo().TotalPhysicalMemory;
+        }
+
+        static ulong GetAvailableMemoryInBytes()
+        {
+            return new Microsoft.VisualBasic.Devices.ComputerInfo().AvailablePhysicalMemory;
+        }
+
+        static string GetSystemUname()
+        {
+            //return new Microsoft.VisualBasic.Devices.ComputerInfo().OSFullName;
+            return new Microsoft.VisualBasic.Devices.Computer().Name + " "+ new Microsoft.VisualBasic.Devices.ComputerInfo().OSFullName;
+        }
+
+        static int GetProcessNumber()
+        {
+            int i = 0;
+            foreach (var item in System.Diagnostics.Process.GetProcesses())
+            {
+
+                i++;
+            }
+            return i;
+        }
+
+
     }
 }
