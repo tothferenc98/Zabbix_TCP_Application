@@ -8,21 +8,13 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-
+using System.Net;
+using System.Diagnostics.Eventing.Reader;
 
 
 #region feladatok
-// .TODO: TCP kapcsolat meghatározása  (TASK LIST)
-// .TODO: TcpClient példakód átmásolása https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.tcpclient?view=net-5.0
-// ZABBIX request string megépítése (1624524243) epoch időkonverzió - string.Format!!
-// Végtelen ciklus 20s-ként megszólítani a zabbix szervert (hibakezelés)
-// válasz kiíratása konzolra
-// Rövid függvények
-
 // TODO: szükséges információk lekérése a pc-től 
 // https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.performancecountertype?view=net-5.0 (RateOfCountsPerSecond64)--> perf_counter[\2\16]
-// TODO: json kezelése, key-ek kiszedése
-// TODO: format.string kezelés
 // TODO: logolás
 #endregion
 
@@ -40,7 +32,33 @@ namespace Zabbix_TCP_Application
 
         static void Main(string[] args)
         {
+
+
+            /*#region próbálkozás
             
+            string logType = "Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational";  //Microsoft-Windows-Kernel-Power
+            string query = "*[System/EventID=1149]";
+
+            var elQuery = new EventLogQuery(logType, PathType.LogName, query);
+            var elReader = new EventLogReader(elQuery);
+
+
+            Console.WriteLine(elReader.ReadEvent());
+
+            var eventLog = new EventLog("Security");
+            for (int i = 0; i < eventLog.Entries.Count; i++)
+            {
+                Console.WriteLine($"{eventLog.Entries[i].Message}");
+            }
+
+            Console.Read();
+
+
+           
+            #endregion próbálkozás*/
+
+
+
             while (true)
             {
                 string message = String.Format("{{\"request\":\"active checks\",\"host\":\"{0}\"}}", HOSTNAME);
@@ -65,7 +83,7 @@ namespace Zabbix_TCP_Application
             string agentHostname = String.Format("{{\"host\":\"{0}\",\"key\":\"agent.hostname\",\"value\":\"{0}\",\"id\":1,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
             string agentPing = String.Format("{{\"host\":\"{0}\",\"key\":\"agent.ping\",\"value\":\"1\",\"id\":2,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
             string agentVersion = String.Format("{{\"host\":\"{0}\",\"key\":\"agent.version\",\"value\":\"TCP_program\",\"id\":3,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
-            string eventlogSystemMicrosoftWindowsKernelPower = String.Format("{{\"host\":\"{0}\",\"key\":\"eventlog[System,,,\\\"Microsoft-Windows-Kernel-Power\\\"]\",\"value\":\"A felhaszn..l..i ..zemm..d.. folyamat megpr..b..lta m..dos..tani a rendszer..llapotot a SetSuspendState vagy a SetSystemPowerState API h..v..s..val.\",\"lastlogsize\":10815,\"timestamp\":1624900534,\"source\":\"Microsoft-Windows-Kernel-Power\",\"severity\":1,\"eventid\":187,\"id\":4,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
+            string eventlogSystemMicrosoftWindowsKernelPower = String.Format("{{\"host\":\"{0}\",\"key\":\"eventlog[System,,,\\\"Microsoft-Windows-Kernel-Power\\\"]\",\"value\":\"Teszt\",\"lastlogsize\":10815,\"timestamp\":1624900534,\"source\":\"Microsoft-Windows-Kernel-Power\",\"severity\":1,\"eventid\":187,\"id\":4,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
             string netIfList = String.Format("{{\"host\":\"{0}\",\"key\":\"net.if.list\",\"value\":\"Teszt\",\"id\":8,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
             string perfCounter234Total1402 = String.Format("{{\"host\":\"{0}\",\"key\":\"perf_counter[\\\\234(_Total)\\\\1402]\",\"value\":\"0.019797\",\"id\":9,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns); //Average disk read queue length
             string perfCounter234Total1404 = String.Format("{{\"host\":\"{0}\",\"key\":\"perf_counter[\\\\234(_Total)\\\\1404]\",\"value\":\"0.006441\",\"id\":10,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns); //Average disk write queue length
@@ -76,8 +94,8 @@ namespace Zabbix_TCP_Application
             string systemCpuLoadPerCpuAvg1 = String.Format("{{\"host\":\"{0}\",\"key\":\"system.cpu.load[percpu,avg1]\",\"value\":\"0.000000\",\"id\":15,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
             string systemCpuLoadPerCpuAvg5 = String.Format("{{\"host\":\"{0}\",\"key\":\"system.cpu.load[percpu,avg5]\",\"value\":\"0.000000\",\"id\":16,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
             string systemLocaltimeUtc = String.Format("{{\"host\":\"{0}\",\"key\":\"system.localtime[utc]\",\"value\":\"{1}\",\"id\":17,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
-            string systemRunIpconfigFindstrIPv4sort = String.Format("{{\"host\":\"{0}\",\"key\":\"system.run[ipconfig | findstr IPv4 | sort]\",\"value\":\"Unsupported item key.\",\"state\":1,\"id\":18,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
-            string systemRunSysteminfo = String.Format("{{\"host\":\"{0}\",\"key\":\"system.run[systeminfo,]\",\"value\":\"Unsupported item key.\",\"state\":1,\"id\":19,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
+            string systemRunIpconfigFindstrIPv4sort = String.Format("{{\"host\":\"{0}\",\"key\":\"system.run[ipconfig | findstr IPv4 | sort]\",\"value\":\"{3}.\",\"state\":1,\"id\":18,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetMyIP());  // TODO: helyes value? Eredetileg Unsupported item key. Nem használja a program
+            string systemRunSysteminfo = String.Format("{{\"host\":\"{0}\",\"key\":\"system.run[systeminfo,]\",\"value\":\"teszt2\",\"state\":1,\"id\":19,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns); //Eredetileg Unsupported item key.
             string systemSwapSizeFree = String.Format("{{\"host\":\"{0}\",\"key\":\"system.swap.size[,free]\",\"value\":\"1971662848\",\"id\":20,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
             string systemSwapSizeTotal = String.Format("{{\"host\":\"{0}\",\"key\":\"system.swap.size[,total]\",\"value\":\"5637144576\",\"id\":21,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
             string systemUname = String.Format("{{\"host\":\"{0}\",\"key\":\"system.uname\",\"value\":\"{3}\",\"id\":22,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetSystemUname());
@@ -133,6 +151,7 @@ namespace Zabbix_TCP_Application
             }
             return secondResponseData;
         }
+
         public static string MakePacketAndConnect(string message) {
             byte[] packet = Packet(message);
 
@@ -296,6 +315,7 @@ namespace Zabbix_TCP_Application
         [DllImport("kernel32")]
         extern static UInt64 GetTickCount64();
 
+
         /*public static int GetSystemCpuLoadPerCpuAvg1()
         {
             var cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total", Environment.MachineName);
@@ -305,6 +325,15 @@ namespace Zabbix_TCP_Application
        
         }*/
 
-
+        public static string GetMyIP()
+        {
+            string hostName = Dns.GetHostName(); 
+            string myIP = Dns.GetHostByName(hostName).AddressList[0].ToString();
+            return myIP;
+        }
+        private static void EventLog_EntryWritten(object sender, EntryWrittenEventArgs e)
+        {
+            Console.WriteLine($"received new entry: {e.Entry.Message}");
+        }
     }
 }
