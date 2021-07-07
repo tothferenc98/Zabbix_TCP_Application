@@ -56,9 +56,8 @@ namespace Zabbix_TCP_Application
 
            
             #endregion próbálkozás*/
-
-
-
+        
+            
             while (true)
             {
                 string message = String.Format("{{\"request\":\"active checks\",\"host\":\"{0}\"}}", HOSTNAME);
@@ -75,7 +74,7 @@ namespace Zabbix_TCP_Application
         }
 
         public static string MakeAgentDataMessage(string responseData) {
-            #region változók
+            #region változók + szótár
             var clock = DateTimeOffset.Now.ToUnixTimeSeconds();
             var rand = new Random();
             int ns = rand.Next(000000001, 999999999);
@@ -85,10 +84,10 @@ namespace Zabbix_TCP_Application
             string agentVersion = String.Format("{{\"host\":\"{0}\",\"key\":\"agent.version\",\"value\":\"TCP_program\",\"id\":3,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
             string eventlogSystemMicrosoftWindowsKernelPower = String.Format("{{\"host\":\"{0}\",\"key\":\"eventlog[System,,,\\\"Microsoft-Windows-Kernel-Power\\\"]\",\"value\":\"Teszt\",\"lastlogsize\":10815,\"timestamp\":1624900534,\"source\":\"Microsoft-Windows-Kernel-Power\",\"severity\":1,\"eventid\":187,\"id\":4,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
             string netIfList = String.Format("{{\"host\":\"{0}\",\"key\":\"net.if.list\",\"value\":\"Teszt\",\"id\":8,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
-            string perfCounter234Total1402 = String.Format("{{\"host\":\"{0}\",\"key\":\"perf_counter[\\\\234(_Total)\\\\1402]\",\"value\":\"0.019797\",\"id\":9,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns); //Average disk read queue length
-            string perfCounter234Total1404 = String.Format("{{\"host\":\"{0}\",\"key\":\"perf_counter[\\\\234(_Total)\\\\1404]\",\"value\":\"0.006441\",\"id\":10,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns); //Average disk write queue length
-            string perfCounter2_16 = String.Format("{{\"host\":\"{0}\",\"key\":\"perf_counter[\\\\2\\\\16]\",\"value\":\"17219.955967\",\"id\":11,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns); //File read bytes per second
-            string perfCounter2_18 = String.Format("{{\"host\":\"{0}\",\"key\":\"perf_counter[\\\\2\\\\18]\",\"value\":\"113342.473095\",\"id\":12,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns); //File write bytes per second
+            string perfCounter234Total1402 = String.Format("{{\"host\":\"{0}\",\"key\":\"perf_counter[\\\\234(_Total)\\\\1402]\",\"value\":\"{3}\",\"id\":9,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetAvgDiskReadQueueLength()); //Average disk read queue length
+            string perfCounter234Total1404 = String.Format("{{\"host\":\"{0}\",\"key\":\"perf_counter[\\\\234(_Total)\\\\1404]\",\"value\":\"{3}\",\"id\":10,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetAvgDiskWriteQueueLength()); //Average disk write queue length
+            string perfCounter2_16 = String.Format("{{\"host\":\"{0}\",\"key\":\"perf_counter[\\\\2\\\\16]\",\"value\":\"{3}\",\"id\":11,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetDiskReadsSec()); //File read bytes per second
+            string perfCounter2_18 = String.Format("{{\"host\":\"{0}\",\"key\":\"perf_counter[\\\\2\\\\18]\",\"value\":\"{3}\",\"id\":12,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetDiskWritesSec()); //File write bytes per second
             string perfCounter2_250 = String.Format("{{\"host\":\"{0}\",\"key\":\"perf_counter[\\\\2\\\\250]\",\"value\":\"{3}\",\"id\":13,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetPerformanceCounter2_250()); //Number of threads
             string procNum = String.Format("{{\"host\":\"{0}\",\"key\":\"proc.num[]\",\"value\":\"{3}\",\"id\":14,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetProcessNumber());
             string systemCpuLoadPerCpuAvg1 = String.Format("{{\"host\":\"{0}\",\"key\":\"system.cpu.load[percpu,avg1]\",\"value\":\"0.000000\",\"id\":15,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
@@ -96,8 +95,8 @@ namespace Zabbix_TCP_Application
             string systemLocaltimeUtc = String.Format("{{\"host\":\"{0}\",\"key\":\"system.localtime[utc]\",\"value\":\"{1}\",\"id\":17,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
             string systemRunIpconfigFindstrIPv4sort = String.Format("{{\"host\":\"{0}\",\"key\":\"system.run[ipconfig | findstr IPv4 | sort]\",\"value\":\"{3}.\",\"state\":1,\"id\":18,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetMyIP());  // TODO: helyes value? Eredetileg Unsupported item key. Nem használja a program
             string systemRunSysteminfo = String.Format("{{\"host\":\"{0}\",\"key\":\"system.run[systeminfo,]\",\"value\":\"teszt2\",\"state\":1,\"id\":19,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns); //Eredetileg Unsupported item key.
-            string systemSwapSizeFree = String.Format("{{\"host\":\"{0}\",\"key\":\"system.swap.size[,free]\",\"value\":\"1971662848\",\"id\":20,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
-            string systemSwapSizeTotal = String.Format("{{\"host\":\"{0}\",\"key\":\"system.swap.size[,total]\",\"value\":\"5637144576\",\"id\":21,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
+            string systemSwapSizeFree = String.Format("{{\"host\":\"{0}\",\"key\":\"system.swap.size[,free]\",\"value\":\"{3}\",\"id\":20,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetAvailableVirtualMemoryInBytes());
+            string systemSwapSizeTotal = String.Format("{{\"host\":\"{0}\",\"key\":\"system.swap.size[,total]\",\"value\":\"{3}\",\"id\":21,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetTotalVirtualMemoryInBytes());
             string systemUname = String.Format("{{\"host\":\"{0}\",\"key\":\"system.uname\",\"value\":\"{3}\",\"id\":22,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetSystemUname());
             string systemUptime = String.Format("{{\"host\":\"{0}\",\"key\":\"system.uptime\",\"value\":\"{3}\",\"id\":23,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetUpTime());
             string vmMemorySizeFree = String.Format("{{\"host\":\"{0}\",\"key\":\"vm.memory.size[free]\",\"value\":\"{3}\",\"id\":24,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetAvailableMemoryInBytes());
@@ -324,13 +323,93 @@ namespace Zabbix_TCP_Application
             return (int)cpuCounter.NextValue();
        
         }*/
-
+        
         public static string GetMyIP()
         {
             string hostName = Dns.GetHostName(); 
             string myIP = Dns.GetHostByName(hostName).AddressList[0].ToString();
             return myIP;
         }
+
+        
+        private static string GetDiskReadsSec()
+        {
+            PerformanceCounter disksReadSec = new PerformanceCounter("PhysicalDisk", "Disk Reads/sec", "_Total");
+            while (true)
+            {
+                var result = disksReadSec.NextValue();
+                if (!result.Equals(0)){
+                    var result2= Convert.ToString(result);
+                    result2=result2.Replace(',', '.');
+                    return result2;
+                }
+            }
+            //Console.WriteLine("Category: {0}", disksReadSec.CategoryName);
+            //Console.WriteLine("Help text: {0}", disksReadSec.CounterHelp);
+            //Console.WriteLine("Avg. Disk Bytes/Read: {0}", disksReadSec.NextValue());
+            
+        }
+
+        private static string GetDiskWritesSec()
+        {
+            PerformanceCounter diskWritesSec = new PerformanceCounter("PhysicalDisk", "Disk Writes/sec", "_Total");
+            while (true)
+            {
+                var result = diskWritesSec.NextValue();
+                if (!result.Equals(0))
+                {
+                    var result2 = Convert.ToString(result);
+                    result2 = result2.Replace(',', '.');
+                    return result2;
+                }
+            }
+            //Console.WriteLine("Category: {0}", diskWritesSec.CategoryName);
+            //Console.WriteLine("Help text: {0}", diskWritesSec.CounterHelp);
+            //Console.WriteLine("Avg. Disk Bytes/Read: {0}", diskWritesSec.NextValue());
+            
+        }
+
+        private static string GetAvgDiskWriteQueueLength()
+        {
+            PerformanceCounter avgDiskWriteQueueLength = new PerformanceCounter("PhysicalDisk", "Avg. Disk Read Queue Length", "_Total");
+            while (true)
+            {
+                var result = avgDiskWriteQueueLength.NextValue();
+                if (!result.Equals(0))
+                {
+                    var result2 = Convert.ToString(result);
+                    result2 = result2.Replace(',', '.');
+                    return result2;
+                }
+            }
+        }
+
+        private static string GetAvgDiskReadQueueLength()
+        {
+            PerformanceCounter avgDiskReadQueueLength = new PerformanceCounter("PhysicalDisk", "Avg. Disk Read Queue Length", "_Total");
+            while (true)
+            {
+                var result = avgDiskReadQueueLength.NextValue();
+                if (!result.Equals(0))
+                {
+                    var result2 = Convert.ToString(result);
+                    result2 = result2.Replace(',', '.');
+                    return result2;
+                }
+            }
+        }
+
+        public static ulong GetTotalVirtualMemoryInBytes()
+        {
+            return new Microsoft.VisualBasic.Devices.ComputerInfo().TotalVirtualMemory;
+        }
+
+        // TODO: javítást igényel
+        public static ulong GetAvailableVirtualMemoryInBytes()
+        {
+            return new Microsoft.VisualBasic.Devices.ComputerInfo().TotalVirtualMemory - new Microsoft.VisualBasic.Devices.ComputerInfo().AvailableVirtualMemory;
+        }
+
         private static void EventLog_EntryWritten(object sender, EntryWrittenEventArgs e)
         {
             Console.WriteLine($"received new entry: {e.Entry.Message}");
