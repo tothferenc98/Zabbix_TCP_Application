@@ -10,11 +10,11 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using System.Net;
 using System.Diagnostics.Eventing.Reader;
-
+using log4net;
+using log4net.Config;
 
 #region feladatok
-// TODO: szükséges információk lekérése a pc-től 
-// https://docs.microsoft.com/en-us/dotnet/api/system.diagnostics.performancecountertype?view=net-5.0 (RateOfCountsPerSecond64)--> perf_counter[\2\16]
+
 // TODO: logolás
 #endregion
 
@@ -22,7 +22,7 @@ namespace Zabbix_TCP_Application
 {
     class Program
     {
-
+        
         #region konstansok
         const string HOSTNAME = "gyakornok_tf_app";
         const string ZABBIX_NAME = "zabbix.beks.hu";
@@ -30,40 +30,28 @@ namespace Zabbix_TCP_Application
         const int CONNECT_DELAY = 20;
         #endregion konstansok
 
+        
+
         static void Main(string[] args)
         {
 
 
-            /*#region próbálkozás
             
-            string logType = "Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational";  //Microsoft-Windows-Kernel-Power
-            string query = "*[System/EventID=1149]";
 
-            var elQuery = new EventLogQuery(logType, PathType.LogName, query);
-            var elReader = new EventLogReader(elQuery);
-
-
-            Console.WriteLine(elReader.ReadEvent());
-
-            var eventLog = new EventLog("Security");
-            for (int i = 0; i < eventLog.Entries.Count; i++)
-            {
-                Console.WriteLine($"{eventLog.Entries[i].Message}");
-            }
-
-            Console.Read();
+            // TODO: log4net inicializálás
+            // 1. logger a tcp kimenő, bemenő adatnak BYTEBAN!
+            // 2. logger küldött és fogadott json 
+            // 3. logger minden egyéb
+            //baretail logelemzéshez
 
 
-           
-            #endregion próbálkozás*/
-        
-            
             while (true)
             {
                 string message = String.Format("{{\"request\":\"active checks\",\"host\":\"{0}\"}}", HOSTNAME);
+                //string message2 = String.Format(@"{{""request"":""active checks"",""host"":""{0}""}}", HOSTNAME);
                 string responseData = MakePacketAndConnect(message);
 
-                if (responseData.Contains("success"))
+                if (responseData.Contains("success"))  // TODO: deserializásás a jsonre és objektum létrehozása
                 {
                     MakeAgentDataMessage(responseData);
                 }
@@ -126,6 +114,8 @@ namespace Zabbix_TCP_Application
             stringpair.Add("vm.memory.size[free]", vmMemorySizeFree);
             stringpair.Add("vm.memory.size[total]", vmMemorySizeTotal);
 
+            Dictionary<string, string> dictKeyValue = new Dictionary<string, string>();
+            dictKeyValue.Add("proc.num[]", GetProcessNumber().ToString());
             #endregion változók
 
             List<JsonClass> jsonData = JsonConvert.DeserializeObject<List<JsonClass>>(ActiveCheckFilter(responseData));
@@ -133,11 +123,13 @@ namespace Zabbix_TCP_Application
             if (jsonData.Count > 0)
             {
                 string secondMessage = "{\"request\":\"agent data\",\"session\":\"2dcf1bf2f6fc1c742812fbbf491e24f2\",\"data\":[";
+                // TODO: StringBuilder használata
                 foreach (var item in jsonData)
                 {
                     if (stringpair.ContainsKey(item.key))
                     {
                         secondMessage += stringpair[item.key] + ",";
+                        // TODO: dictKeyValue használata, ide jön a String.Format
                     }
 
                 }
@@ -153,7 +145,7 @@ namespace Zabbix_TCP_Application
 
         public static string MakePacketAndConnect(string message) {
             byte[] packet = Packet(message);
-
+            // TODO: message átnevezése jsonmessage-re
             string responseData = "";
             try
             {
@@ -181,12 +173,12 @@ namespace Zabbix_TCP_Application
             byte[] packet = new byte[header.Length + data.Length];
             Array.Copy(header, 0, packet, 0, header.Length);
             Array.Copy(Encoding.ASCII.GetBytes(data), 0, packet, header.Length, data.Length);
-            Array.Copy(Encoding.ASCII.GetBytes(data), 0, packet, header.Length, data.Length);
 
             return packet;
         }
-
-        public static string Connect(String server, byte[] data, string message)
+        //public static string ConnectJson(String server, string jsondata)
+        // TODO: itt történne meg a zbxd header képzés és visszaad egy headertelenítétt jsont, connectet hívja meg
+        public static string Connect(String server, byte[] data, string message) // TODO: message kiszedése, és string helyett byte tömb visszaadása
         {
             try
             {
@@ -210,13 +202,14 @@ namespace Zabbix_TCP_Application
                 // Receive the TcpServer.response.
 
                 // Buffer to store the response bytes.
-                data = new Byte[2048];
+                data = new Byte[2048]; // TODO:Meg tudja mondani a stream, hogy mennyire van szükség? (availablebyte/readavailable)
 
                 // String to store the response ASCII representation.
                 String responseData = String.Empty;
 
                 // Read the first batch of the TcpServer response bytes.
                 Int32 bytes = stream.Read(data, 0, data.Length);
+                
                 responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
                 Console.WriteLine("Received: {0}\n", responseData);
 
@@ -237,7 +230,10 @@ namespace Zabbix_TCP_Application
             }
 
         }
-
+        //Legfelső réteg: objektum szint
+        //Középső réteg: json szint
+        //Alatta réteg: ZBXD csomag
+        //Alsó réteg : Byte tömb
         public class JsonClass
         {
             public string key { get; set; }
@@ -303,7 +299,6 @@ namespace Zabbix_TCP_Application
             return count;
         }
 
-        
         public static string GetUpTime()
         {
             var atalakit = GetTickCount64()/1000;
@@ -313,16 +308,6 @@ namespace Zabbix_TCP_Application
 
         [DllImport("kernel32")]
         extern static UInt64 GetTickCount64();
-
-
-        /*public static int GetSystemCpuLoadPerCpuAvg1()
-        {
-            var cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total", Environment.MachineName);
-            cpuCounter.NextValue();
-            System.Threading.Thread.Sleep(100); //This avoid that answer always 0
-            return (int)cpuCounter.NextValue();
-       
-        }*/
         
         public static string GetMyIP()
         {
@@ -410,9 +395,5 @@ namespace Zabbix_TCP_Application
             return new Microsoft.VisualBasic.Devices.ComputerInfo().TotalVirtualMemory - new Microsoft.VisualBasic.Devices.ComputerInfo().AvailableVirtualMemory;
         }
 
-        private static void EventLog_EntryWritten(object sender, EntryWrittenEventArgs e)
-        {
-            Console.WriteLine($"received new entry: {e.Entry.Message}");
-        }
     }
 }
