@@ -13,10 +13,6 @@ using System.Diagnostics.Eventing.Reader;
 using log4net;
 using log4net.Config;
 
-#region feladatok
-
-// TODO: logolás
-#endregion
 
 namespace Zabbix_TCP_Application
 {
@@ -41,18 +37,27 @@ namespace Zabbix_TCP_Application
             // 2. logger küldött és fogadott json 
             // 3. logger minden egyéb
             //baretail logelemzéshez
-
-
+            
             while (true)
             {
-                string message = String.Format("{{\"request\":\"active checks\",\"host\":\"{0}\"}}", HOSTNAME);
-                //string message2 = String.Format(@"{{""request"":""active checks"",""host"":""{0}""}}", HOSTNAME);
-                string responseData = ConnectJson(message);
-                if (responseData.Contains("success"))  // TODO: deserializásás a jsonre és objektum létrehozása
+                try
                 {
-                    MakeAgentDataMessage(responseData);
+                    string jsonData = String.Format(@"{{""request"":""active checks"",""host"":""{0}""}}", HOSTNAME);
+                    string responseData = ConnectJson(jsonData);
+                    WholeJsonClass jsonObject = JsonConvert.DeserializeObject<WholeJsonClass>(responseData);
+                    if (jsonObject.response != null)
+                    {
+                        if (jsonObject.response.Equals("success"))
+                        {
+                            MakeAgentDataMessage(responseData);
+                        }
+                    }
                 }
-
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+                
                 System.Threading.Thread.Sleep(CONNECT_DELAY * 1000);
 
             }
@@ -63,7 +68,8 @@ namespace Zabbix_TCP_Application
             var clock = DateTimeOffset.Now.ToUnixTimeSeconds();
             var rand = new Random();
             int ns = rand.Next(000000001, 999999999);
-
+            #region régi változat (kommentelve)
+            /*
             string agentHostname = String.Format("{{\"host\":\"{0}\",\"key\":\"agent.hostname\",\"value\":\"{0}\",\"id\":1,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
             string agentPing = String.Format("{{\"host\":\"{0}\",\"key\":\"agent.ping\",\"value\":\"1\",\"id\":2,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
             string agentVersion = String.Format("{{\"host\":\"{0}\",\"key\":\"agent.version\",\"value\":\"TCP_program\",\"id\":3,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
@@ -110,76 +116,63 @@ namespace Zabbix_TCP_Application
             stringpair.Add("system.uptime", systemUptime);
             stringpair.Add("vm.memory.size[free]", vmMemorySizeFree);
             stringpair.Add("vm.memory.size[total]", vmMemorySizeTotal);
-
+            */
+            #endregion régi változat (kommentelve)
             Dictionary<string, string> dictKeyValue = new Dictionary<string, string>();
-            dictKeyValue.Add("agent.hostname", HOSTNAME);
-            dictKeyValue.Add("agent.ping", "1");
-            dictKeyValue.Add("agent.version", "TCP_program");
-            dictKeyValue.Add("net.if.list", GetProcessNumber().ToString());
-            /*
-            dictKeyValue.Add("perf_counter[\\234(_Total)\\1402]", GetAvgDiskReadQueueLength());
-            dictKeyValue.Add("perf_counter[\\234(_Total)\\1404]", GetAvgDiskWriteQueueLength());
-            dictKeyValue.Add("perf_counter[\\2\\16]", GetDiskReadsSec());
-            dictKeyValue.Add("perf_counter[\\2\\18]", GetDiskWritesSec());
-            dictKeyValue.Add("perf_counter[\\2\\250]", GetPerformanceCounter2_250().ToString());*/
-            dictKeyValue.Add("system.cpu.load[percpu,avg1]", "0.000000");
-            dictKeyValue.Add("system.cpu.load[percpu,avg5]", "0.000000");
-            dictKeyValue.Add("system.localtime[utc]", clock.ToString());
-            dictKeyValue.Add("system.swap.size[,free]", GetAvailableVirtualMemoryInBytes().ToString());
-            dictKeyValue.Add("system.swap.size[,total]", GetTotalVirtualMemoryInBytes().ToString());
-            dictKeyValue.Add("system.uname", GetSystemUname());
-            dictKeyValue.Add("system.uptime", GetUpTime());
-            dictKeyValue.Add("vm.memory.size[free]", GetAvailableMemoryInBytes().ToString());
-            dictKeyValue.Add("vm.memory.size[total]", GetTotalMemoryInBytes().ToString());
+            dictKeyValue.Add(@"agent.hostname", HOSTNAME);
+            dictKeyValue.Add(@"agent.ping", "1");
+            dictKeyValue.Add(@"agent.version", "TCP_program");
+            dictKeyValue.Add(@"net.if.list", GetProcessNumber().ToString());
+            dictKeyValue.Add(@"perf_counter[\\234(_Total)\\1402]", GetAvgDiskReadQueueLength());
+            dictKeyValue.Add(@"perf_counter[\\234(_Total)\\1404]", GetAvgDiskWriteQueueLength());
+            dictKeyValue.Add(@"perf_counter[\\2\\16]", GetDiskReadsSec());
+            dictKeyValue.Add(@"perf_counter[\\2\\18]", GetDiskWritesSec());
+            dictKeyValue.Add(@"perf_counter[\\2\\250]", GetPerformanceCounter2_250().ToString());
+            dictKeyValue.Add(@"proc.num[]", GetProcessNumber().ToString());
+            dictKeyValue.Add(@"system.cpu.load[percpu,avg1]", "0.000000");
+            dictKeyValue.Add(@"system.cpu.load[percpu,avg5]", "0.000000");
+            dictKeyValue.Add(@"system.localtime[utc]", clock.ToString());
+            dictKeyValue.Add(@"system.swap.size[,free]", GetAvailableVirtualMemoryInBytes().ToString());
+            dictKeyValue.Add(@"system.swap.size[,total]", GetTotalVirtualMemoryInBytes().ToString());
+            dictKeyValue.Add(@"system.uname", GetSystemUname());
+            dictKeyValue.Add(@"system.uptime", GetUpTime());
+            dictKeyValue.Add(@"vm.memory.size[free]", GetAvailableMemoryInBytes().ToString());
+            dictKeyValue.Add(@"vm.memory.size[total]", GetTotalMemoryInBytes().ToString());
             #endregion változók
 
             List<JsonClass> jsonData = JsonConvert.DeserializeObject<List<JsonClass>>(ActiveCheckFilter(responseData));
+
+            StringBuilder jsonStringBuilder = new StringBuilder();
             string secondResponseData = "";
             
             if (jsonData.Count > 0)
             {
-                string secondMessage = "{\"request\":\"agent data\",\"session\":\"2dcf1bf2f6fc1c742812fbbf491e24f2\",\"data\":[";
-                // TODO: StringBuilder használata
+                jsonStringBuilder.Append(@"{""request"":""agent data"",""session"":""2dcf1bf2f6fc1c742812fbbf491e24f2"",""data"":[");
+                int id = 1;
                 foreach (var item in jsonData)
                 {
+                    
+                    if (item.key.Contains(@"\"));
+                    {
+                        item.key = item.key.Replace(@"\", @"\\");
+                    }
+
                     if (dictKeyValue.ContainsKey(item.key))
                     {
-                        //secondMessage += stringpair[item.key] + ",";
-                        secondMessage += String.Format(@"{{""host"":""{0}"",""key"":""{4}"",""value"":""{3}"",""id"":14,""clock"":{1},""ns"":{2}}}", HOSTNAME, clock, ns, dictKeyValue[item.key], item.key) + ",";
-                        
-                        // LEGFONTOSABB, EZZEL KELL KEZDENI, A PEREKKEL BAJ VAN!!!!!
-                        ;
-                        // TODO: dictKeyValue használata, ide jön a String.Format
-
+                        jsonStringBuilder.Append(String.Format(@"{{""host"":""{0}"",""key"":""{3}"",""value"":""{4}"",""id"":{5},""clock"":{1},""ns"":{2}}}", HOSTNAME, clock, ns, item.key, dictKeyValue[item.key], id) + ",");
+                        id++;
                     }
 
                 }
-                secondMessage = secondMessage.Remove(secondMessage.Length - 1, 1);
-                secondMessage += "],\"clock\":" + clock + ",\"ns\":" + ns + "}";
+                jsonStringBuilder.Remove(jsonStringBuilder.Length - 1, 1);
+                jsonStringBuilder.Append(String.Format(@"],""clock"":{0},""ns"":{1}}}", Convert.ToInt32(clock), ns));
 
-
-                secondResponseData = ConnectJson(secondMessage);
+                secondResponseData = ConnectJson(jsonStringBuilder.ToString());
 
             }
             return secondResponseData;
         }
-        /*
-        public static string MakePacketAndConnect(string message) {
-            byte[] packet = Packet(message);
-            // TODO: message átnevezése jsonmessage-re
-            string responseData = "";
-            try
-            {
-                responseData = ConnectJson(packet);
-
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("HIBA: {0}", e);
-            }
-            return responseData;
-        }*/
-
+        
         public static byte[] Packet(string data)
         {
 
@@ -199,7 +192,7 @@ namespace Zabbix_TCP_Application
         }
 
         
-        public static string ConnectJson(string jsonData) // TODO: itt történne meg a zbxd header képzés és visszaad egy headertelenítétt jsont, connectet hívja meg
+        public static string ConnectJson(string jsonData) 
         {
             byte[] bytePacket = Packet(jsonData);
             string resultJson = String.Empty;
@@ -217,12 +210,9 @@ namespace Zabbix_TCP_Application
             }
             return resultJson;
 
-
-
-
         }
         
-        public static byte[] Connect(byte[] data) // TODO: message kiszedése, és string helyett byte tömb visszaadása
+        public static byte[] Connect(byte[] data) 
         {
             try
             {
@@ -293,7 +283,12 @@ namespace Zabbix_TCP_Application
         //Alatta réteg: ZBXD csomag
         //Alsó réteg : Byte tömb
 
+        public class WholeJsonClass
+        {
+            public string response { get; set; }
+            public List<JsonClass> data { get; set; }
 
+        }
         public class JsonClass
         {
             public string key { get; set; }
