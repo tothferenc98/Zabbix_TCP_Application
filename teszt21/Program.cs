@@ -13,6 +13,7 @@ using System.Diagnostics.Eventing.Reader;
 using log4net;
 using log4net.Config;
 
+[assembly: XmlConfigurator(Watch = true)]
 
 namespace Zabbix_TCP_Application
 {
@@ -27,17 +28,15 @@ namespace Zabbix_TCP_Application
         const int BUFFER_SIZE = 2048;
         #endregion konstansok
 
-        
 
+        private static readonly ILog ByteLog = LogManager.GetLogger("ByteLog");
+        private static readonly ILog JsonLog = LogManager.GetLogger("JsonLog");
         static void Main(string[] args)
         {
-
-            // TODO: log4net inicializálás
             // 1. logger a tcp kimenő, bemenő adatnak BYTEBAN!
             // 2. logger küldött és fogadott json 
             // 3. logger minden egyéb
-            //baretail logelemzéshez
-            
+
             while (true)
             {
                 try
@@ -49,7 +48,7 @@ namespace Zabbix_TCP_Application
                     {
                         if (jsonObject.response.Equals("success"))
                         {
-                            MakeAgentDataMessage(responseData);
+                            MakeAgentDataMessage(responseData, jsonObject);
                         }
                     }
                 }
@@ -63,7 +62,7 @@ namespace Zabbix_TCP_Application
             }
         }
 
-        public static string MakeAgentDataMessage(string responseData) {
+        public static string MakeAgentDataMessage(string responseData, WholeJsonClass jsonObject) {
             #region változók + szótár
             var clock = DateTimeOffset.Now.ToUnixTimeSeconds();
             var rand = new Random();
@@ -140,16 +139,14 @@ namespace Zabbix_TCP_Application
             dictKeyValue.Add(@"vm.memory.size[total]", GetTotalMemoryInBytes().ToString());
             #endregion változók
 
-            List<JsonClass> jsonData = JsonConvert.DeserializeObject<List<JsonClass>>(ActiveCheckFilter(responseData));
-
             StringBuilder jsonStringBuilder = new StringBuilder();
             string secondResponseData = "";
             
-            if (jsonData.Count > 0)
+            if (jsonObject.data.Count > 0)
             {
                 jsonStringBuilder.Append(@"{""request"":""agent data"",""session"":""2dcf1bf2f6fc1c742812fbbf491e24f2"",""data"":[");
                 int id = 1;
-                foreach (var item in jsonData)
+                foreach (var item in jsonObject.data)
                 {
                     
                     if (item.key.Contains(@"\"));
@@ -194,6 +191,7 @@ namespace Zabbix_TCP_Application
         
         public static string ConnectJson(string jsonData) 
         {
+            JsonLog.Debug("\nSent: "+ jsonData);
             byte[] bytePacket = Packet(jsonData);
             string resultJson = String.Empty;
             try
@@ -206,8 +204,9 @@ namespace Zabbix_TCP_Application
             }
             catch (Exception e)
             {
-                Console.WriteLine("HIBA: {0}", e);
+                Console.WriteLine("Exception: {0}", e);
             }
+            JsonLog.Debug("\nReceived: " + resultJson);
             return resultJson;
 
         }
@@ -216,6 +215,16 @@ namespace Zabbix_TCP_Application
         {
             try
             {
+
+                // Hexadecimális értékek logolása
+                string hexValue = "";
+                foreach (var item in data)
+                {
+                    int vOut = Convert.ToInt32(item);
+                    hexValue += vOut.ToString("X");
+                }
+                ByteLog.Debug("\n"+ hexValue);
+                
                 // Create a TcpClient.
                 // Note, for this client to work you need to have a TcpServer
                 // connected to the same address as specified by the server, port
@@ -250,17 +259,14 @@ namespace Zabbix_TCP_Application
                 responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
                 Console.WriteLine("Received: {0}\n", responseData);
 
-                /* Hexadecimális értékek kiíratása
+                // Hexadecimális értékek logolása
+                hexValue = "";
                 foreach (var item in data)
                 {
                     int vOut = Convert.ToInt32(item);
-                    string hexValue = vOut.ToString("X");
-                    // Convert the hex string back to the number
-                    int intAgain = int.Parse(hexValue, System.Globalization.NumberStyles.HexNumber);
-
-                    Console.Write(" "+ hexValue);
+                    hexValue += vOut.ToString("X");
                 }
-                */
+                ByteLog.Debug("\n" + hexValue);
 
                 // Close everything.
                 stream.Close();
@@ -269,10 +275,12 @@ namespace Zabbix_TCP_Application
             }
             catch (ArgumentNullException e)
             {
+                ByteLog.Error("\nArgumentNullException: {0}" + e);
                 Console.WriteLine("ArgumentNullException: {0}", e);
             }
             catch (SocketException e)
             {
+                ByteLog.Error("\nSocketException: {0}" + e);
                 Console.WriteLine("SocketException: {0}", e);
             }
             return data;
@@ -296,30 +304,6 @@ namespace Zabbix_TCP_Application
             public int lastlogsize { get; set; }
             public int mtime { get; set; }
 
-        }
-
-        public static string ActiveCheckFilter(string data)
-        {
-            if (data.Contains("[") && data.Contains("]"))
-            {
-                int index = data.IndexOf('[');
-                int lastindex = data.LastIndexOf(']');
-                /*
-                string jsonString =
-
-                @"
-                [
-                {""key"":""agent.hostname"",""delay"":3600,""lastlogsize"":0,""mtime"":0},
-                {""key"":""vm.memory.size[total]"",""delay"":3600,""lastlogsize"":0,""mtime"":0}
-                ]
-                "; csak ilyen [] közötti adatokat tudja feldolgozni a program!!
-                */
-                return data.Substring(index, lastindex - index + 1);
-            }
-            else
-            {
-                return "";
-            }
         }
 
         public static ulong GetTotalMemoryInBytes()
