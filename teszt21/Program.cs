@@ -2,14 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Management;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
 using System.Net;
-using System.Diagnostics.Eventing.Reader;
 using log4net;
 using log4net.Config;
 
@@ -31,12 +28,10 @@ namespace Zabbix_TCP_Application
 
         private static readonly ILog ByteLog = LogManager.GetLogger("ByteLog");
         private static readonly ILog JsonLog = LogManager.GetLogger("JsonLog");
+        private static readonly ILog Log = LogManager.GetLogger("Log");
         static void Main(string[] args)
         {
-            // 1. logger a tcp kimenő, bemenő adatnak BYTEBAN!
-            // 2. logger küldött és fogadott json 
-            // 3. logger minden egyéb
-
+            Log.Debug("Start");
             while (true)
             {
                 try
@@ -286,10 +281,6 @@ namespace Zabbix_TCP_Application
             return data;
 
         }
-        //Legfelső réteg: objektum szint
-        //Középső réteg: json szint
-        //Alatta réteg: ZBXD csomag
-        //Alsó réteg : Byte tömb
 
         public class WholeJsonClass
         {
@@ -318,7 +309,6 @@ namespace Zabbix_TCP_Application
 
         public static string GetSystemUname()
         {
-            //return new Microsoft.VisualBasic.Devices.ComputerInfo().OSFullName;
             return new Microsoft.VisualBasic.Devices.Computer().Name + " " + new Microsoft.VisualBasic.Devices.ComputerInfo().OSFullName;
         }
 
@@ -427,9 +417,8 @@ namespace Zabbix_TCP_Application
             return new Microsoft.VisualBasic.Devices.ComputerInfo().TotalVirtualMemory;
         }
 
-        // TODO: javítást igényel
         public static ulong GetAvailableVirtualMemoryInBytes()
-        {
+        {//javítást igényel
             return new Microsoft.VisualBasic.Devices.ComputerInfo().TotalVirtualMemory - new Microsoft.VisualBasic.Devices.ComputerInfo().AvailableVirtualMemory;
         }
 
