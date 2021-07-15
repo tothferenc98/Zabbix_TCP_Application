@@ -20,9 +20,12 @@ namespace Zabbix_TCP_Application
         #region konstansok
         const string HOSTNAME = "gyakornok_tf_app";
         const string ZABBIX_NAME = "zabbix.beks.hu";
-        const int ZABBIX_PORT = 10051;
+        const int ZABBIX_PORT = 10051; //pl 80
         const int CONNECT_DELAY = 20;
-        const int BUFFER_SIZE = 2048;
+        const int BUFFER_SIZE = 1800;
+        public static Encoding ASCII = Encoding.ASCII;
+
+
         #endregion konstansok
 
 
@@ -31,6 +34,8 @@ namespace Zabbix_TCP_Application
         private static readonly ILog Log = LogManager.GetLogger("Log");
         static void Main(string[] args)
         {
+            //Zabbix_TCP_Application.Properties.Settings.Default.HOSTNAME
+            //TODO: kiírni logba a appconfig értékét
             Log.Debug("Start");
             while (true)
             {
@@ -38,18 +43,28 @@ namespace Zabbix_TCP_Application
                 {
                     string jsonData = String.Format(@"{{""request"":""active checks"",""host"":""{0}""}}", HOSTNAME);
                     string responseData = ConnectJson(jsonData);
-                    WholeJsonClass jsonObject = JsonConvert.DeserializeObject<WholeJsonClass>(responseData);
-                    if (jsonObject.response != null)
+                    if (!responseData.Equals(String.Empty))
                     {
-                        if (jsonObject.response.Equals("success"))
+                        ResponseJsonObject jsonObject = JsonConvert.DeserializeObject<ResponseJsonObject>(responseData);
+                        if (jsonObject.response != null && jsonObject.response.Equals("success"))
                         {
-                            MakeAgentDataMessage(responseData, jsonObject);
+                            MakeAgentDataMessage(jsonObject);
+                        }
+                        else
+                        {
+                            Log.Error("A response értéke nem success, hanem " + jsonObject.response);
                         }
                     }
+                    
+                        
+                    //TODO: ELSE
+                        
+                    
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
+                    Log.Error("Hiba a main függvényben:\n"+e);
                 }
                 
                 System.Threading.Thread.Sleep(CONNECT_DELAY * 1000);
@@ -57,110 +72,63 @@ namespace Zabbix_TCP_Application
             }
         }
 
-        public static string MakeAgentDataMessage(string responseData, WholeJsonClass jsonObject) {
+        public static string MakeAgentDataMessage(ResponseJsonObject jsonObject) {
             #region változók + szótár
             var clock = DateTimeOffset.Now.ToUnixTimeSeconds();
             var rand = new Random();
             int ns = rand.Next(000000001, 999999999);
-            #region régi változat (kommentelve)
-            /*
-            string agentHostname = String.Format("{{\"host\":\"{0}\",\"key\":\"agent.hostname\",\"value\":\"{0}\",\"id\":1,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
-            string agentPing = String.Format("{{\"host\":\"{0}\",\"key\":\"agent.ping\",\"value\":\"1\",\"id\":2,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
-            string agentVersion = String.Format("{{\"host\":\"{0}\",\"key\":\"agent.version\",\"value\":\"TCP_program\",\"id\":3,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
-            //string eventlogSystemMicrosoftWindowsKernelPower = String.Format("{{\"host\":\"{0}\",\"key\":\"eventlog[System,,,\\\"Microsoft-Windows-Kernel-Power\\\"]\",\"value\":\"Teszt\",\"lastlogsize\":10815,\"timestamp\":1624900534,\"source\":\"Microsoft-Windows-Kernel-Power\",\"severity\":1,\"eventid\":187,\"id\":4,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
-            string netIfList = String.Format("{{\"host\":\"{0}\",\"key\":\"net.if.list\",\"value\":\"Teszt\",\"id\":8,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
-            string perfCounter234Total1402 = String.Format("{{\"host\":\"{0}\",\"key\":\"perf_counter[\\\\234(_Total)\\\\1402]\",\"value\":\"{3}\",\"id\":9,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetAvgDiskReadQueueLength()); //Average disk read queue length
-            string perfCounter234Total1404 = String.Format("{{\"host\":\"{0}\",\"key\":\"perf_counter[\\\\234(_Total)\\\\1404]\",\"value\":\"{3}\",\"id\":10,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetAvgDiskWriteQueueLength()); //Average disk write queue length
-            string perfCounter2_16 = String.Format("{{\"host\":\"{0}\",\"key\":\"perf_counter[\\\\2\\\\16]\",\"value\":\"{3}\",\"id\":11,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetDiskReadsSec()); //File read bytes per second
-            string perfCounter2_18 = String.Format("{{\"host\":\"{0}\",\"key\":\"perf_counter[\\\\2\\\\18]\",\"value\":\"{3}\",\"id\":12,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetDiskWritesSec()); //File write bytes per second
-            string perfCounter2_250 = String.Format("{{\"host\":\"{0}\",\"key\":\"perf_counter[\\\\2\\\\250]\",\"value\":\"{3}\",\"id\":13,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetPerformanceCounter2_250()); //Number of threads
-            string procNum = String.Format("{{\"host\":\"{0}\",\"key\":\"proc.num[]\",\"value\":\"{3}\",\"id\":14,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetProcessNumber());
-            string systemCpuLoadPerCpuAvg1 = String.Format("{{\"host\":\"{0}\",\"key\":\"system.cpu.load[percpu,avg1]\",\"value\":\"0.000000\",\"id\":15,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
-            string systemCpuLoadPerCpuAvg5 = String.Format("{{\"host\":\"{0}\",\"key\":\"system.cpu.load[percpu,avg5]\",\"value\":\"0.000000\",\"id\":16,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
-            string systemLocaltimeUtc = String.Format("{{\"host\":\"{0}\",\"key\":\"system.localtime[utc]\",\"value\":\"{1}\",\"id\":17,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns);
-            //string systemRunIpconfigFindstrIPv4sort = String.Format("{{\"host\":\"{0}\",\"key\":\"system.run[ipconfig | findstr IPv4 | sort]\",\"value\":\"{3}.\",\"state\":1,\"id\":18,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetMyIP());  // TODO: helyes value? Eredetileg Unsupported item key. Nem használja a program
-            //string systemRunSysteminfo = String.Format("{{\"host\":\"{0}\",\"key\":\"system.run[systeminfo,]\",\"value\":\"teszt2\",\"state\":1,\"id\":19,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns); //Eredetileg Unsupported item key.
-            string systemSwapSizeFree = String.Format("{{\"host\":\"{0}\",\"key\":\"system.swap.size[,free]\",\"value\":\"{3}\",\"id\":20,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetAvailableVirtualMemoryInBytes());
-            string systemSwapSizeTotal = String.Format("{{\"host\":\"{0}\",\"key\":\"system.swap.size[,total]\",\"value\":\"{3}\",\"id\":21,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetTotalVirtualMemoryInBytes());
-            string systemUname = String.Format("{{\"host\":\"{0}\",\"key\":\"system.uname\",\"value\":\"{3}\",\"id\":22,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetSystemUname());
-            string systemUptime = String.Format("{{\"host\":\"{0}\",\"key\":\"system.uptime\",\"value\":\"{3}\",\"id\":23,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetUpTime());
-            string vmMemorySizeFree = String.Format("{{\"host\":\"{0}\",\"key\":\"vm.memory.size[free]\",\"value\":\"{3}\",\"id\":24,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetAvailableMemoryInBytes());
-            string vmMemorySizeTotal = String.Format("{{\"host\":\"{0}\",\"key\":\"vm.memory.size[total]\",\"value\":\"{3}\",\"id\":25,\"clock\":{1},\"ns\":{2}}}", HOSTNAME, clock, ns, GetTotalMemoryInBytes());
-
-            Dictionary<string, string> stringpair = new Dictionary<string, string>();
-            stringpair.Add("agent.hostname", agentHostname);
-            stringpair.Add("agent.ping", agentPing);
-            stringpair.Add("agent.version", agentVersion);
-            //stringpair.Add("eventlog[System,,,\"Microsoft-Windows-Kernel-Power\"]", eventlogSystemMicrosoftWindowsKernelPower);
-            stringpair.Add("net.if.list", netIfList);
-            stringpair.Add("perf_counter[\\234(_Total)\\1402]", perfCounter234Total1402);
-            stringpair.Add("perf_counter[\\234(_Total)\\1404]", perfCounter234Total1404);
-            stringpair.Add("perf_counter[\\2\\16]", perfCounter2_16);
-            stringpair.Add("perf_counter[\\2\\18]", perfCounter2_18);
-            stringpair.Add("perf_counter[\\2\\250]", perfCounter2_250);
-            stringpair.Add("proc.num[]", procNum);
-            stringpair.Add("system.cpu.load[percpu,avg1]", systemCpuLoadPerCpuAvg1);
-            stringpair.Add("system.cpu.load[percpu,avg5]", systemCpuLoadPerCpuAvg5);
-            stringpair.Add("system.localtime[utc]", systemLocaltimeUtc);
-            //stringpair.Add("system.run[ipconfig | findstr IPv4 | sort]", systemRunIpconfigFindstrIPv4sort);
-            //stringpair.Add("system.run[systeminfo,]", systemRunSysteminfo);
-            stringpair.Add("system.swap.size[,free]", systemSwapSizeFree);
-            stringpair.Add("system.swap.size[,total]", systemSwapSizeTotal);
-            stringpair.Add("system.uname", systemUname);
-            stringpair.Add("system.uptime", systemUptime);
-            stringpair.Add("vm.memory.size[free]", vmMemorySizeFree);
-            stringpair.Add("vm.memory.size[total]", vmMemorySizeTotal);
-            */
-            #endregion régi változat (kommentelve)
             Dictionary<string, string> dictKeyValue = new Dictionary<string, string>();
-            dictKeyValue.Add(@"agent.hostname", HOSTNAME);
-            dictKeyValue.Add(@"agent.ping", "1");
-            dictKeyValue.Add(@"agent.version", "TCP_program");
-            dictKeyValue.Add(@"net.if.list", GetProcessNumber().ToString());
-            dictKeyValue.Add(@"perf_counter[\\234(_Total)\\1402]", GetAvgDiskReadQueueLength());
-            dictKeyValue.Add(@"perf_counter[\\234(_Total)\\1404]", GetAvgDiskWriteQueueLength());
-            dictKeyValue.Add(@"perf_counter[\\2\\16]", GetDiskReadsSec());
-            dictKeyValue.Add(@"perf_counter[\\2\\18]", GetDiskWritesSec());
-            dictKeyValue.Add(@"perf_counter[\\2\\250]", GetPerformanceCounter2_250().ToString());
-            dictKeyValue.Add(@"proc.num[]", GetProcessNumber().ToString());
-            dictKeyValue.Add(@"system.cpu.load[percpu,avg1]", "0.000000");
-            dictKeyValue.Add(@"system.cpu.load[percpu,avg5]", "0.000000");
-            dictKeyValue.Add(@"system.localtime[utc]", clock.ToString());
-            dictKeyValue.Add(@"system.swap.size[,free]", GetAvailableVirtualMemoryInBytes().ToString());
-            dictKeyValue.Add(@"system.swap.size[,total]", GetTotalVirtualMemoryInBytes().ToString());
-            dictKeyValue.Add(@"system.uname", GetSystemUname());
-            dictKeyValue.Add(@"system.uptime", GetUpTime());
-            dictKeyValue.Add(@"vm.memory.size[free]", GetAvailableMemoryInBytes().ToString());
-            dictKeyValue.Add(@"vm.memory.size[total]", GetTotalMemoryInBytes().ToString());
+            dictKeyValue.Add("agent.hostname", HOSTNAME);
+            dictKeyValue.Add("agent.ping", "1");
+            dictKeyValue.Add("agent.version", "TCP_program");
+            dictKeyValue.Add("net.if.list", GetProcessNumber().ToString());
+            dictKeyValue.Add("perf_counter[\\234(_Total)\\1402]", GetAvgDiskReadQueueLength()); 
+            dictKeyValue.Add("perf_counter[\\234(_Total)\\1404]", GetAvgDiskWriteQueueLength());
+            dictKeyValue.Add("perf_counter[\\2\\16]", GetDiskReadsSec());
+            dictKeyValue.Add("perf_counter[\\2\\18]", GetDiskWritesSec());
+            dictKeyValue.Add("perf_counter[\\2\\250]", GetPerformanceCounter2_250().ToString());
+            dictKeyValue.Add("proc.num[]", GetProcessNumber().ToString());
+            dictKeyValue.Add("system.cpu.load[percpu,avg1]", "0.000000");
+            dictKeyValue.Add("system.cpu.load[percpu,avg5]", "0.000000");
+            dictKeyValue.Add("system.localtime[utc]", clock.ToString());
+            dictKeyValue.Add("system.swap.size[,free]", GetAvailableVirtualMemoryInBytes().ToString());
+            dictKeyValue.Add("system.swap.size[,total]", GetTotalVirtualMemoryInBytes().ToString());
+            dictKeyValue.Add("system.uname", GetSystemUname());
+            dictKeyValue.Add("system.uptime", GetUpTime());
+            dictKeyValue.Add("vm.memory.size[free]", GetAvailableMemoryInBytes().ToString());
+            dictKeyValue.Add("vm.memory.size[total]", GetTotalMemoryInBytes().ToString());
             #endregion változók
 
-            StringBuilder jsonStringBuilder = new StringBuilder();
             string secondResponseData = "";
-            
+            RequestJsonObject requestJsonObject = new RequestJsonObject();
             if (jsonObject.data.Count > 0)
             {
-                jsonStringBuilder.Append(@"{""request"":""agent data"",""session"":""2dcf1bf2f6fc1c742812fbbf491e24f2"",""data"":[");
                 int id = 1;
+                List<RequestJsonData> listRequestJsonData = new List<RequestJsonData>();
                 foreach (var item in jsonObject.data)
                 {
-                    
-                    if (item.key.Contains(@"\"));
-                    {
-                        item.key = item.key.Replace(@"\", @"\\");
-                    }
-
                     if (dictKeyValue.ContainsKey(item.key))
                     {
-                        jsonStringBuilder.Append(String.Format(@"{{""host"":""{0}"",""key"":""{3}"",""value"":""{4}"",""id"":{5},""clock"":{1},""ns"":{2}}}", HOSTNAME, clock, ns, item.key, dictKeyValue[item.key], id) + ",");
+                        #region RequestJsonData lista felépítése
+                        RequestJsonData requestJsonData = new RequestJsonData();
+                        requestJsonData.key = item.key;
+                        requestJsonData.value = dictKeyValue[item.key];
+                        requestJsonData.id = id;
+                        requestJsonData.clock = Convert.ToInt32(clock);
+                        requestJsonData.ns = ns;
+                        listRequestJsonData.Add(requestJsonData);
+                        #endregion RequestJsonData lista felépítése
                         id++;
                     }
-
                 }
-                jsonStringBuilder.Remove(jsonStringBuilder.Length - 1, 1);
-                jsonStringBuilder.Append(String.Format(@"],""clock"":{0},""ns"":{1}}}", Convert.ToInt32(clock), ns));
+                requestJsonObject.data = listRequestJsonData;
+                requestJsonObject.clock = Convert.ToInt32(clock);
+                requestJsonObject.ns = ns;
 
-                secondResponseData = ConnectJson(jsonStringBuilder.ToString());
-
+                string serializedJson = JsonConvert.SerializeObject(requestJsonObject);
+                
+                secondResponseData = ConnectJson(serializedJson);
+                
             }
             return secondResponseData;
         }
@@ -178,7 +146,8 @@ namespace Zabbix_TCP_Application
 
             byte[] packet = new byte[header.Length + data.Length];
             Array.Copy(header, 0, packet, 0, header.Length);
-            Array.Copy(Encoding.ASCII.GetBytes(data), 0, packet, header.Length, data.Length);
+            
+            Array.Copy(ASCII.GetBytes(data), 0, packet, header.Length, data.Length);
 
             return packet;
         }
@@ -186,30 +155,66 @@ namespace Zabbix_TCP_Application
         
         public static string ConnectJson(string jsonData) 
         {
-            JsonLog.Debug("\nSent: "+ jsonData);
+            JsonLog.Debug("Sending in progress: " + jsonData);
             byte[] bytePacket = Packet(jsonData);
-            string resultJson = String.Empty;
+            byte[] error = new byte[0];
             try
             {
                 byte[] result = Connect(bytePacket);
+                // TODO: Csomaghossz ellenőrzés
+                if (!result.SequenceEqual(error))
+                {
+                    string resultJson = System.Text.Encoding.ASCII.GetString(result, 0, result.Length);
+                    Console.WriteLine("Sent: {0}", jsonData);
+                    JsonLog.Info("Sent:     " + jsonData);
 
-                byte[] resultWithoutHeader = new byte[result.Length -12];
-                Array.Copy(result, 12, resultWithoutHeader, 0, resultWithoutHeader.Length);
-                resultJson = Encoding.Default.GetString(resultWithoutHeader);
+                    byte[] resultWithoutHeader = new byte[result.Length - 12];
+                    Array.Copy(result, 12, resultWithoutHeader, 0, resultWithoutHeader.Length);
+                    resultJson = ASCII.GetString(resultWithoutHeader);
+
+                    JsonLog.Info("Received: " + resultJson);
+                    Console.WriteLine("Received: {0}\n", resultJson);
+                    return resultJson;
+                }
+                else
+                {
+                    JsonLog.Error("A result byte tömb üres ");
+                    return String.Empty;
+                }
+                
             }
             catch (Exception e)
             {
                 Console.WriteLine("Exception: {0}", e);
+                return String.Empty;
             }
-            JsonLog.Debug("\nReceived: " + resultJson);
-            return resultJson;
+            
+            
 
         }
         
         public static byte[] Connect(byte[] data) 
         {
-            try
+            byte[] error = new byte[0];
+            try //TODO: szétszedni a try-okat
             {
+
+                // Create a TcpClient.
+                // Note, for this client to work you need to have a TcpServer
+                // connected to the same address as specified by the server, port
+                // combination.
+                Int32 port = ZABBIX_PORT;
+                String server = ZABBIX_NAME;
+                TcpClient client = new TcpClient(server, port);
+                
+                // Get a client stream for reading and writing.
+                //  Stream stream = client.GetStream();
+
+                NetworkStream stream = client.GetStream();
+
+                // Send the message to the connected TcpServer.
+                stream.Write(data, 0, data.Length);
+                String requestData = String.Empty;
 
                 // Hexadecimális értékek logolása
                 string hexValue = "";
@@ -218,41 +223,18 @@ namespace Zabbix_TCP_Application
                     int vOut = Convert.ToInt32(item);
                     hexValue += vOut.ToString("X");
                 }
-                ByteLog.Debug("\n"+ hexValue);
-                
-                // Create a TcpClient.
-                // Note, for this client to work you need to have a TcpServer
-                // connected to the same address as specified by the server, port
-                // combination.
-                Int32 port = ZABBIX_PORT;
-                String server = ZABBIX_NAME;
-                TcpClient client = new TcpClient(server, port);
-
-                // Get a client stream for reading and writing.
-                //  Stream stream = client.GetStream();
-                
-                NetworkStream stream = client.GetStream();
-                
-                // Send the message to the connected TcpServer.
-                stream.Write(data, 0, data.Length);
-                String requestData = String.Empty;
-                requestData = System.Text.Encoding.ASCII.GetString(data, 0, data.Length);
-                Console.WriteLine("Sent: {0}",requestData);
-
+                ByteLog.Info("Sent:     " + hexValue);
 
                 // Receive the TcpServer.response.
 
                 // Buffer to store the response bytes.
                 data = new Byte[BUFFER_SIZE]; // TODO:Meg tudja mondani a stream, hogy mennyire van szükség? (availablebyte/readavailable)
-
+                
                 // String to store the response ASCII representation.
                 String responseData = String.Empty;
-
+                
                 // Read the first batch of the TcpServer response bytes.
                 int bytes = stream.Read(data, 0, data.Length);
-                
-                responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
-                Console.WriteLine("Received: {0}\n", responseData);
 
                 // Hexadecimális értékek logolása
                 hexValue = "";
@@ -261,34 +243,55 @@ namespace Zabbix_TCP_Application
                     int vOut = Convert.ToInt32(item);
                     hexValue += vOut.ToString("X");
                 }
-                ByteLog.Debug("\n" + hexValue);
-
+                ByteLog.Info("Received: "+hexValue);
+                
                 // Close everything.
                 stream.Close();
                 client.Close();
-                
+                return data;
+
             }
             catch (ArgumentNullException e)
             {
                 ByteLog.Error("\nArgumentNullException: {0}" + e);
                 Console.WriteLine("ArgumentNullException: {0}", e);
+                return error;
             }
             catch (SocketException e)
             {
                 ByteLog.Error("\nSocketException: {0}" + e);
                 Console.WriteLine("SocketException: {0}", e);
+                return error;
             }
-            return data;
+            
+
+        }
+        public class RequestJsonObject
+        {
+            public string request = "agent data";
+            public string session = "2dcf1bf2f6fc1c742812fbbf491e24f2";
+            public List<RequestJsonData> data { get; set; }
+            public int clock { get; set; }
+            public int ns { get; set; }
+        }
+        public class RequestJsonData
+        {
+            public string host = HOSTNAME;
+            public string key { get; set; }
+            public string value { get; set; }
+            public int id { get; set; }
+            public int clock { get; set; }
+            public int ns { get; set; }
 
         }
 
-        public class WholeJsonClass
+        public class ResponseJsonObject
         {
             public string response { get; set; }
-            public List<JsonClass> data { get; set; }
+            public List<ResponseJsonData> data { get; set; }
 
         }
-        public class JsonClass
+        public class ResponseJsonData
         {
             public string key { get; set; }
             public int delay { get; set; }
