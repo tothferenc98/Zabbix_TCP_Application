@@ -31,5 +31,41 @@ namespace Zabbix_TCP_Application.Properties {
                 return ((string)(this["HOSTNAME"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("zabbix.beks.hu")]
+        public string ZABBIX_NAME {
+            get {
+                return ((string)(this["ZABBIX_NAME"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("10051")]
+        public int ZABBIX_PORT {
+            get {
+                return ((int)(this["ZABBIX_PORT"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("20")]
+        public int CONNECT_DELAY {
+            get {
+                return ((int)(this["CONNECT_DELAY"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1800")]
+        public int BUFFER_SIZE {
+            get {
+                return ((int)(this["BUFFER_SIZE"]));
+            }
+        }
     }
 }

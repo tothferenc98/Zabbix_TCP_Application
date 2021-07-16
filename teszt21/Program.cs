@@ -18,11 +18,11 @@ namespace Zabbix_TCP_Application
     {
         
         #region konstansok
-        const string HOSTNAME = "gyakornok_tf_app";
-        const string ZABBIX_NAME = "zabbix.beks.hu";
-        const int ZABBIX_PORT = 10051; //pl 80
-        const int CONNECT_DELAY = 20;
-        const int BUFFER_SIZE = 1800;
+        public static string HOSTNAME = Properties.Settings.Default.HOSTNAME;
+        public static string ZABBIX_NAME = Properties.Settings.Default.ZABBIX_NAME;
+        public static int ZABBIX_PORT = Properties.Settings.Default.ZABBIX_PORT; //pl 80
+        public static int CONNECT_DELAY = Properties.Settings.Default.CONNECT_DELAY;
+        public static int BUFFER_SIZE = Properties.Settings.Default.BUFFER_SIZE;
         public static Encoding ASCII = Encoding.ASCII;
 
 
@@ -146,7 +146,6 @@ namespace Zabbix_TCP_Application
 
             byte[] packet = new byte[header.Length + data.Length];
             Array.Copy(header, 0, packet, 0, header.Length);
-            
             Array.Copy(ASCII.GetBytes(data), 0, packet, header.Length, data.Length);
 
             return packet;
@@ -168,18 +167,49 @@ namespace Zabbix_TCP_Application
                     Console.WriteLine("Sent: {0}", jsonData);
                     JsonLog.Info("Sent:     " + jsonData);
 
-                    byte[] resultWithoutHeader = new byte[result.Length - 12];
-                    Array.Copy(result, 12, resultWithoutHeader, 0, resultWithoutHeader.Length);
+                    byte[] resultWithoutHeader = new byte[result.Length - 13];
+                    Array.Copy(result, 13, resultWithoutHeader, 0, resultWithoutHeader.Length);
                     resultJson = ASCII.GetString(resultWithoutHeader);
+                    byte[] headerOriginal = new byte[13];
+                    Array.Copy(result, 0, headerOriginal, 0, headerOriginal.Length);
+                    #region headerosszehasonlító (kommentelve)
+                    /*foreach (var item in headerOriginal)
+                    {
+                        Console.WriteLine(item);
+                    }
+                    byte[] header = new byte[] {
+                    (byte)'Z', (byte)'B', (byte)'X', (byte)'D', (byte)0x00+1,
+                    (byte)(resultWithoutHeader.Length & 0xFF),
+                    (byte)((resultWithoutHeader.Length >> 8) & 0xFF),
+                    (byte)((resultWithoutHeader.Length >> 16) & 0xFF),
+                    (byte)((resultWithoutHeader.Length >> 24) & 0xFF),
+                    (byte)'\0', (byte)'\0', (byte)'\0', (byte)'\0'};
+                    foreach (var item in header)
+                    {
+                        Console.WriteLine(item);
+                    }*/
+                    #endregion headerosszehasonlító (kommentelve)
 
                     JsonLog.Info("Received: " + resultJson);
                     Console.WriteLine("Received: {0}\n", resultJson);
-                    return resultJson;
+                    if (((byte)resultWithoutHeader.Length).Equals(headerOriginal[5]))
+                    {
+                        
+                        return resultJson;
+                    }
+                    else
+                    {
+                        //Console.WriteLine((byte)resultWithoutHeader.Length);
+                        //Console.WriteLine(headerOriginal[5]);
+                        JsonLog.Info("Nem érkezett meg a teljes csomag ("+ (byte)resultWithoutHeader.Length + " helyett "+ headerOriginal[5] + " byte)" + resultJson);
+                        throw new InvalidOperationException("Nem érkezett meg a teljes csomag");
+                    }
+
                 }
                 else
                 {
                     JsonLog.Error("A result byte tömb üres ");
-                    return String.Empty;
+                    throw new InvalidOperationException("A result byte tömb üres ");
                 }
                 
             }
@@ -235,7 +265,7 @@ namespace Zabbix_TCP_Application
                 
                 // Read the first batch of the TcpServer response bytes.
                 int bytes = stream.Read(data, 0, data.Length);
-
+                data=TrimEnd(data);
                 // Hexadecimális értékek logolása
                 hexValue = "";
                 foreach (var item in data)
@@ -298,6 +328,14 @@ namespace Zabbix_TCP_Application
             public int lastlogsize { get; set; }
             public int mtime { get; set; }
 
+        }
+        public static byte[] TrimEnd(byte[] array)
+        {
+            int lastIndex = Array.FindLastIndex(array, b => b != 0);
+
+            Array.Resize(ref array, lastIndex + 1);
+
+            return array;
         }
 
         public static ulong GetTotalMemoryInBytes()
