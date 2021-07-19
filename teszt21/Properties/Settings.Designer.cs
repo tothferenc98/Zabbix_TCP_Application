@@ -43,7 +43,7 @@ namespace Zabbix_TCP_Application.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("10051")]
+        [global::System.Configuration.DefaultSettingValueAttribute("10052")]
         public int ZABBIX_PORT {
             get {
                 return ((int)(this["ZABBIX_PORT"]));

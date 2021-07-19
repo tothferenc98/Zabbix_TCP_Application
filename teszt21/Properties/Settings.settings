@@ -9,7 +9,7 @@
       <Value Profile="(Default)">zabbix.beks.hu</Value>
     </Setting>
     <Setting Name="ZABBIX_PORT" Type="System.Int32" Scope="Application">
-      <Value Profile="(Default)">10051</Value>
+      <Value Profile="(Default)">10052</Value>
     </Setting>
     <Setting Name="CONNECT_DELAY" Type="System.Int32" Scope="Application">
       <Value Profile="(Default)">20</Value>

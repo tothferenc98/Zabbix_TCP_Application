@@ -23,7 +23,7 @@ namespace Zabbix_TCP_Application
         public static int ZABBIX_PORT = Properties.Settings.Default.ZABBIX_PORT; //pl 80
         public static int CONNECT_DELAY = Properties.Settings.Default.CONNECT_DELAY;
         public static int BUFFER_SIZE = Properties.Settings.Default.BUFFER_SIZE;
-        public static Encoding ASCII = Encoding.ASCII;
+        public static Encoding ENCODING = Encoding.ASCII;
 
 
         #endregion konstansok
@@ -37,39 +37,44 @@ namespace Zabbix_TCP_Application
             //Zabbix_TCP_Application.Properties.Settings.Default.HOSTNAME
             //TODO: kiírni logba a appconfig értékét
             Log.Debug("Start");
-            while (true)
+            Log.Debug("Settings beállításai: HOSTNAME: " + HOSTNAME+ ", ZABBIX_NAME: "+ ZABBIX_NAME+ ", ZABBIX_PORT: "+ ZABBIX_PORT+ ", CONNECT_DELAY: " + CONNECT_DELAY+ ", BUFFER_SIZE: "+ BUFFER_SIZE);
+            do
             {
-                try
+                while (!Console.KeyAvailable)
                 {
-                    string jsonData = String.Format(@"{{""request"":""active checks"",""host"":""{0}""}}", HOSTNAME);
-                    string responseData = ConnectJson(jsonData);
-                    if (!responseData.Equals(String.Empty))
+                    try
                     {
-                        ResponseJsonObject jsonObject = JsonConvert.DeserializeObject<ResponseJsonObject>(responseData);
-                        if (jsonObject.response != null && jsonObject.response.Equals("success"))
+                        string jsonData = String.Format(@"{{""request"":""active checks"",""host"":""{0}""}}", HOSTNAME);
+                        string responseData = ConnectJson(jsonData);
+                        if (!responseData.Equals(String.Empty))
                         {
-                            MakeAgentDataMessage(jsonObject);
+                            ResponseJsonObject jsonObject = JsonConvert.DeserializeObject<ResponseJsonObject>(responseData);
+                            if (jsonObject.response != null && jsonObject.response.Equals("success"))
+                            {
+                                MakeAgentDataMessage(jsonObject);
+                            }
+                            else
+                            {
+                                Log.Error("Az active checket a szerver nem tudta feldolgozni. " + ((jsonObject.response == null) ? " Null az értéke a válasznak" : "Nem success a válasz értéke, hanem: " + jsonObject.response+ ". "+responseData));
+                            }
                         }
-                        else
-                        {
-                            Log.Error("A response értéke nem success, hanem " + jsonObject.response);
+                        else {
+                            Log.Error("Az active check feldolgozása során hiba lépett fel!");
                         }
-                    }
-                    
-                        
-                    //TODO: ELSE
-                        
-                    
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                    Log.Error("Hiba a main függvényben:\n"+e);
-                }
-                
-                System.Threading.Thread.Sleep(CONNECT_DELAY * 1000);
 
-            }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                        Log.Error("Hiba a main függvényben: " + e);
+                    }
+
+                    System.Threading.Thread.Sleep(CONNECT_DELAY * 1000);
+                    
+                }
+            } while (Console.ReadKey(true).Key != ConsoleKey.Escape);
+            Log.Debug("STOP");
+            //Console.WriteLine("STOP");
         }
 
         public static string MakeAgentDataMessage(ResponseJsonObject jsonObject) {
@@ -99,38 +104,52 @@ namespace Zabbix_TCP_Application
             dictKeyValue.Add("vm.memory.size[total]", GetTotalMemoryInBytes().ToString());
             #endregion változók
 
-            string secondResponseData = "";
+            string secondResponseData = String.Empty;
             RequestJsonObject requestJsonObject = new RequestJsonObject();
-            if (jsonObject.data.Count > 0)
+            try
             {
-                int id = 1;
-                List<RequestJsonData> listRequestJsonData = new List<RequestJsonData>();
-                foreach (var item in jsonObject.data)
+                if (jsonObject.data.Count > 0)
                 {
-                    if (dictKeyValue.ContainsKey(item.key))
+                    int id = 1;
+                    List<RequestJsonData> listRequestJsonData = new List<RequestJsonData>();
+                    foreach (var item in jsonObject.data)
                     {
-                        #region RequestJsonData lista felépítése
-                        RequestJsonData requestJsonData = new RequestJsonData();
-                        requestJsonData.key = item.key;
-                        requestJsonData.value = dictKeyValue[item.key];
-                        requestJsonData.id = id;
-                        requestJsonData.clock = Convert.ToInt32(clock);
-                        requestJsonData.ns = ns;
-                        listRequestJsonData.Add(requestJsonData);
-                        #endregion RequestJsonData lista felépítése
-                        id++;
+                        if (dictKeyValue.ContainsKey(item.key))
+                        {
+                            #region RequestJsonData lista felépítése
+                            RequestJsonData requestJsonData = new RequestJsonData();
+                            requestJsonData.key = item.key;
+                            requestJsonData.value = dictKeyValue[item.key];
+                            requestJsonData.id = id;
+                            requestJsonData.clock = Convert.ToInt32(clock);
+                            requestJsonData.ns = ns;
+                            listRequestJsonData.Add(requestJsonData);
+                            #endregion RequestJsonData lista felépítése
+                            id++;
+                        }
                     }
-                }
-                requestJsonObject.data = listRequestJsonData;
-                requestJsonObject.clock = Convert.ToInt32(clock);
-                requestJsonObject.ns = ns;
+                    requestJsonObject.data = listRequestJsonData;
+                    requestJsonObject.clock = Convert.ToInt32(clock);
+                    requestJsonObject.ns = ns;
 
-                string serializedJson = JsonConvert.SerializeObject(requestJsonObject);
-                
-                secondResponseData = ConnectJson(serializedJson);
-                
+                    string serializedJson = JsonConvert.SerializeObject(requestJsonObject);
+
+                    secondResponseData = ConnectJson(serializedJson);
+
+                }
+                else
+                {
+                    throw new Exception("Kaptunk választ, de a json data része üres");
+                }
+                return secondResponseData;
             }
-            return secondResponseData;
+            catch (Exception e)
+            {
+                Log.Error("Exception: " + e);
+                return String.Empty;
+
+            }
+            
         }
         
         public static byte[] Packet(string data)
@@ -146,30 +165,28 @@ namespace Zabbix_TCP_Application
 
             byte[] packet = new byte[header.Length + data.Length];
             Array.Copy(header, 0, packet, 0, header.Length);
-            Array.Copy(ASCII.GetBytes(data), 0, packet, header.Length, data.Length);
+            Array.Copy(ENCODING.GetBytes(data), 0, packet, header.Length, data.Length);
 
             return packet;
         }
 
         
         public static string ConnectJson(string jsonData) 
-        {
-            JsonLog.Debug("Sending in progress: " + jsonData);
+        {     
+            JsonLog.Debug("Sending:  " + jsonData);
             byte[] bytePacket = Packet(jsonData);
-            byte[] error = new byte[0];
             try
             {
                 byte[] result = Connect(bytePacket);
-                // TODO: Csomaghossz ellenőrzés
-                if (!result.SequenceEqual(error))
+                if (!result.SequenceEqual(new byte[0]))
                 {
-                    string resultJson = System.Text.Encoding.ASCII.GetString(result, 0, result.Length);
+                    string resultJson = ENCODING.GetString(result, 0, result.Length);
                     Console.WriteLine("Sent: {0}", jsonData);
                     JsonLog.Info("Sent:     " + jsonData);
 
                     byte[] resultWithoutHeader = new byte[result.Length - 13];
                     Array.Copy(result, 13, resultWithoutHeader, 0, resultWithoutHeader.Length);
-                    resultJson = ASCII.GetString(resultWithoutHeader);
+                    resultJson = ENCODING.GetString(resultWithoutHeader);
                     byte[] headerOriginal = new byte[13];
                     Array.Copy(result, 0, headerOriginal, 0, headerOriginal.Length);
                     #region headerosszehasonlító (kommentelve)
@@ -192,30 +209,30 @@ namespace Zabbix_TCP_Application
 
                     JsonLog.Info("Received: " + resultJson);
                     Console.WriteLine("Received: {0}\n", resultJson);
-                    if (((byte)resultWithoutHeader.Length).Equals(headerOriginal[5]))
-                    {
-                        
+                    if (((byte)(resultWithoutHeader.Length & 0xFF)).Equals(headerOriginal[5]) && ((byte)((resultWithoutHeader.Length >> 8) & 0xFF)).Equals(headerOriginal[6]) && ((byte)((resultWithoutHeader.Length >> 16) & 0xFF)).Equals(headerOriginal[7]) && ((byte)((resultWithoutHeader.Length >> 24) & 0xFF)).Equals(headerOriginal[8]))
+                    {// Csomaghossz ellenőrzés
                         return resultJson;
                     }
                     else
                     {
                         //Console.WriteLine((byte)resultWithoutHeader.Length);
                         //Console.WriteLine(headerOriginal[5]);
-                        JsonLog.Info("Nem érkezett meg a teljes csomag ("+ (byte)resultWithoutHeader.Length + " helyett "+ headerOriginal[5] + " byte)" + resultJson);
-                        throw new InvalidOperationException("Nem érkezett meg a teljes csomag");
+                        //JsonLog.Error("Nem érkezett meg a teljes csomag ("+ (byte)resultWithoutHeader.Length + " helyett "+ headerOriginal[5] + " byte)" + resultJson);
+                        throw new InvalidOperationException("Nem érkezett meg a teljes csomag (" + (byte)resultWithoutHeader.Length + " helyett " + headerOriginal[5] + " byte)" + resultJson);
                     }
 
                 }
                 else
                 {
-                    JsonLog.Error("A result byte tömb üres ");
-                    throw new InvalidOperationException("A result byte tömb üres ");
+                    //JsonLog.Error("A csatlakozás során hiba lépett fel!");
+                    throw new InvalidOperationException("A csatlakozás során hiba lépett fel!");
                 }
                 
             }
             catch (Exception e)
             {
                 Console.WriteLine("Exception: {0}", e);
+                JsonLog.Error("Exception: "+ e);
                 return String.Empty;
             }
             
@@ -244,7 +261,6 @@ namespace Zabbix_TCP_Application
 
                 // Send the message to the connected TcpServer.
                 stream.Write(data, 0, data.Length);
-                String requestData = String.Empty;
 
                 // Hexadecimális értékek logolása
                 string hexValue = "";
@@ -254,42 +270,48 @@ namespace Zabbix_TCP_Application
                     hexValue += vOut.ToString("X");
                 }
                 ByteLog.Info("Sent:     " + hexValue);
-
-                // Receive the TcpServer.response.
-
-                // Buffer to store the response bytes.
-                data = new Byte[BUFFER_SIZE]; // TODO:Meg tudja mondani a stream, hogy mennyire van szükség? (availablebyte/readavailable)
-                
-                // String to store the response ASCII representation.
-                String responseData = String.Empty;
-                
-                // Read the first batch of the TcpServer response bytes.
-                int bytes = stream.Read(data, 0, data.Length);
-                data=TrimEnd(data);
-                // Hexadecimális értékek logolása
-                hexValue = "";
-                foreach (var item in data)
+                try
                 {
-                    int vOut = Convert.ToInt32(item);
-                    hexValue += vOut.ToString("X");
+                    // Receive the TcpServer.response.
+
+                    // Buffer to store the response bytes.
+                    data = new Byte[BUFFER_SIZE]; // TODO:Meg tudja mondani a stream, hogy mennyire van szükség? (availablebyte/readavailable)
+
+                    // Read the first batch of the TcpServer response bytes.
+                    int bytes = stream.Read(data, 0, data.Length);
+                    data = TrimEnd(data);
+
+                    // Hexadecimális értékek logolása
+                    hexValue = "";
+                    foreach (var item in data)
+                    {
+                        int vOut = Convert.ToInt32(item);
+                        hexValue += vOut.ToString("X");
+                    }
+                    ByteLog.Info("Received: " + hexValue);
+
+                    // Close everything.
+                    stream.Close();
+                    client.Close();
+                    return data;
                 }
-                ByteLog.Info("Received: "+hexValue);
+                catch (Exception e)
+                {
+                    ByteLog.Error("Hiba a Connect válasz részénél: " + e);
+                    return error;
+                }
                 
-                // Close everything.
-                stream.Close();
-                client.Close();
-                return data;
 
             }
             catch (ArgumentNullException e)
             {
-                ByteLog.Error("\nArgumentNullException: {0}" + e);
+                ByteLog.Error("Hiba a Connect küldés részénél: ArgumentNullException:" + e);
                 Console.WriteLine("ArgumentNullException: {0}", e);
                 return error;
             }
             catch (SocketException e)
             {
-                ByteLog.Error("\nSocketException: {0}" + e);
+                ByteLog.Error("Hiba a Connect küldés részénél: SocketException: " + e);
                 Console.WriteLine("SocketException: {0}", e);
                 return error;
             }
