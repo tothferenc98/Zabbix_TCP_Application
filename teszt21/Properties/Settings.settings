@@ -3,19 +3,19 @@
   <Profiles />
   <Settings>
     <Setting Name="HOSTNAME" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">gyakornok_tf_app</Value>
+      <Value Profile="(Default)">beks_hw_192.168.193.245</Value>
     </Setting>
     <Setting Name="ZABBIX_NAME" Type="System.String" Scope="Application">
       <Value Profile="(Default)">zabbix.beks.hu</Value>
     </Setting>
     <Setting Name="ZABBIX_PORT" Type="System.Int32" Scope="Application">
-      <Value Profile="(Default)">10052</Value>
+      <Value Profile="(Default)">10051</Value>
     </Setting>
     <Setting Name="CONNECT_DELAY" Type="System.Int32" Scope="Application">
       <Value Profile="(Default)">20</Value>
     </Setting>
     <Setting Name="BUFFER_SIZE" Type="System.Int32" Scope="Application">
-      <Value Profile="(Default)">1800</Value>
+      <Value Profile="(Default)">5000</Value>
     </Setting>
   </Settings>
 </SettingsFile>

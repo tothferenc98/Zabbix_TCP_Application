@@ -25,7 +25,7 @@ namespace Zabbix_TCP_Application.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("gyakornok_tf_app")]
+        [global::System.Configuration.DefaultSettingValueAttribute("beks_hw_192.168.193.245")]
         public string HOSTNAME {
             get {
                 return ((string)(this["HOSTNAME"]));
@@ -43,7 +43,7 @@ namespace Zabbix_TCP_Application.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("10052")]
+        [global::System.Configuration.DefaultSettingValueAttribute("10051")]
         public int ZABBIX_PORT {
             get {
                 return ((int)(this["ZABBIX_PORT"]));
@@ -61,7 +61,7 @@ namespace Zabbix_TCP_Application.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("1800")]
+        [global::System.Configuration.DefaultSettingValueAttribute("5000")]
         public int BUFFER_SIZE {
             get {
                 return ((int)(this["BUFFER_SIZE"]));

@@ -44,8 +44,11 @@ namespace Zabbix_TCP_Application
                 {
                     try
                     {
-                        string jsonData = String.Format(@"{{""request"":""active checks"",""host"":""{0}""}}", HOSTNAME);
+                        //string jsonData = String.Format(@"{{""request"":""active checks"",""host"":""{0}""}}", HOSTNAME);
+                        string jsonData = String.Format(@"{{""request"": ""proxy config"", ""host"": ""{0}"", ""version"": ""3.4.13""}}", "gyakornok_tf_proxy");
+
                         string responseData = ConnectJson(jsonData);
+                        /*
                         if (!responseData.Equals(String.Empty))
                         {
                             ResponseJsonObject jsonObject = JsonConvert.DeserializeObject<ResponseJsonObject>(responseData);
@@ -59,8 +62,8 @@ namespace Zabbix_TCP_Application
                             }
                         }
                         else {
-                            Log.Error("Az active check feldolgozása során hiba lépett fel!");
-                        }
+                            Log.Warn("Az active check feldolgozása során hiba lépett fel!");
+                        }*/
 
                     }
                     catch (Exception e)
