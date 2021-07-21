@@ -44,11 +44,11 @@ namespace Zabbix_TCP_Application
                 {
                     try
                     {
-                        //string jsonData = String.Format(@"{{""request"":""active checks"",""host"":""{0}""}}", HOSTNAME);
-                        string jsonData = String.Format(@"{{""request"": ""proxy config"", ""host"": ""{0}"", ""version"": ""3.4.13""}}", "gyakornok_tf_proxy");
+                        string jsonData = String.Format(@"{{""request"":""active checks"",""host"":""{0}""}}", HOSTNAME);
+                        //string jsonData = String.Format(@"{{""request"": ""proxy config"", ""host"": ""{0}"", ""version"": ""3.4.13""}}", "gyakornok_tf_proxy");
 
                         string responseData = ConnectJson(jsonData);
-                        /*
+                        
                         if (!responseData.Equals(String.Empty))
                         {
                             ResponseJsonObject jsonObject = JsonConvert.DeserializeObject<ResponseJsonObject>(responseData);
@@ -58,12 +58,12 @@ namespace Zabbix_TCP_Application
                             }
                             else
                             {
-                                Log.Error("Az active checket a szerver nem tudta feldolgozni. " + ((jsonObject.response == null) ? " Null az értéke a válasznak" : "Nem success a válasz értéke, hanem: " + jsonObject.response+ ". "+responseData));
+                                Log.Error(((jsonObject.response == null) ? "Az active checket a szerver nem tudta feldolgozni. Null az értéke a válasznak" : "Nem success a válasz értéke, hanem " + jsonObject.response+ ". "+responseData));
                             }
                         }
                         else {
                             Log.Warn("Az active check feldolgozása során hiba lépett fel!");
-                        }*/
+                        }
 
                     }
                     catch (Exception e)
@@ -227,8 +227,9 @@ namespace Zabbix_TCP_Application
                 }
                 else
                 {
-                    //JsonLog.Error("A csatlakozás során hiba lépett fel!");
-                    throw new InvalidOperationException("A csatlakozás során hiba lépett fel!");
+                    JsonLog.Warn("A csatlakozás során hiba lépett fel!");
+                    return String.Empty;
+                    //throw new InvalidOperationException("A csatlakozás során hiba lépett fel!");
                 }
                 
             }
