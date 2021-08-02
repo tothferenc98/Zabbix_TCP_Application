@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,8 +9,10 @@ namespace Zabbix_TCP_Application.ProxyCommunication
 {
     class ResponseJsonObject
     {
-        public ResponseJsonData globalmacro { get; set; }
-        public ResponseJsonData hosts { get; set; }
-        //public ResponseJsonData interface { get; set; }
+        //public ResponseJsonData globalmacro { get; set; }
+        //public ResponseJsonData hosts { get; set; }
+        [JsonProperty("interface")]
+        public ResponseJsonData interface_ { get; set; }
+        public ResponseJsonData items { get; set; }
     }
 }

@@ -30,22 +30,56 @@ namespace Zabbix_TCP_Application
         {
             //ZabbixAgent();
 
-            //string jsonData = String.Format(@"{{""request"": ""proxy config"", ""host"": ""{0}"", ""version"": ""3.4.13""}}", "gyakornok_tf_proxy");
-            //string responseData = Utilit                                                                                                                                       y.ConnectJson(jsonData);
+            string jsonData = String.Format(@"{{""request"": ""proxy config"", ""host"": ""{0}"", ""version"": ""3.4.13""}}", "gyakornok_tf_proxy");
+            string responseData = Utility.ConnectJson(jsonData); 
             //string teszt = "{\"globalmacro\":{\"fields\":[\"globalmacroid\",\"macro\",\"value\"],\"data\":[[2,\"{$SNMP_COMMUNITY}\",\"public\"]]}}";
-            string teszt = "{\"globalmacro\":{\"fields\":[\"globalmacroid\",\"macro\",\"value\"],\"data\":[[2,\"{$SNMP_COMMUNITY}\",\"public\"]]},\"hosts\":{\"fields\":[\"hostid\",\"host\",\"status\",\"ipmi_authtype\",\"ipmi_privilege\",\"ipmi_username\",\"ipmi_password\",\"name\",\"tls_connect\",\"tls_accept\",\"tls_issuer\",\"tls_subject\",\"tls_psk_identity\",\"tls_psk\"],\"data\":[[10407,\"Template App Zabbix Agent Active\",3,-1,2,\"\",\"\",\"Template App Zabbix Agent Active\",1,1,\"\",\"\",\"\",\"\"],[10408,\"Template OS Windows Active Agent\",3,-1,2,\"\",\"\",\"Template OS Windows Active Agent\",1,1,\"\",\"\",\"\",\"\"],[10624,\"beks_hw_192.168.193.245\",0,-1,2,\"\",\"\",\"beks_hw_192.168.193.245 (Nagy Andr??s DO)\",1,1,\"\",\"\",\"\",\"\"],[11445,\"beks_gapc_192.168.194.147\",0,-1,2,\"\",\"\",\"beks_gapc_192.168.194.147 (Varga Bandi asztal??n)\",1,1,\"\",\"\",\"\",\"\"],[11528,\"gyakornok_tf_pc\",0,-1,2,\"\",\"\",\"MON gyakornok_tf_pc\",1,1,\"\",\"\",\"\",\"\"],[11539,\"Welcome3 HW JSON monitoring Active\",3,-1,2,\"\",\"\",\"Welcome3 HW JSON monitoring Active\",1,1,\"\",\"\",\"\",\"\"]]}}";
-            Console.WriteLine(teszt);
-            ProxyCommunication.ResponseJsonObject jsonObject = JsonConvert.DeserializeObject<ProxyCommunication.ResponseJsonObject>(teszt);
-            foreach (var item in jsonObject.globalmacro.fields)
+            //string teszt = "{\"globalmacro\":{\"fields\":[\"globalmacroid\",\"macro\",\"value\"],\"data\":[[2,\"{$SNMP_COMMUNITY}\",\"public\"]]},\"hosts\":{\"fields\":[\"hostid\",\"host\",\"status\",\"ipmi_authtype\",\"ipmi_privilege\",\"ipmi_username\",\"ipmi_password\",\"name\",\"tls_connect\",\"tls_accept\",\"tls_issuer\",\"tls_subject\",\"tls_psk_identity\",\"tls_psk\"],\"data\":[[10407,\"Template App Zabbix Agent Active\",3,-1,2,\"\",\"\",\"Template App Zabbix Agent Active\",1,1,\"\",\"\",\"\",\"\"],[10408,\"Template OS Windows Active Agent\",3,-1,2,\"\",\"\",\"Template OS Windows Active Agent\",1,1,\"\",\"\",\"\",\"\"],[10624,\"beks_hw_192.168.193.245\",0,-1,2,\"\",\"\",\"beks_hw_192.168.193.245 (Nagy Andr??s DO)\",1,1,\"\",\"\",\"\",\"\"],[11445,\"beks_gapc_192.168.194.147\",0,-1,2,\"\",\"\",\"beks_gapc_192.168.194.147 (Varga Bandi asztal??n)\",1,1,\"\",\"\",\"\",\"\"],[11528,\"gyakornok_tf_pc\",0,-1,2,\"\",\"\",\"MON gyakornok_tf_pc\",1,1,\"\",\"\",\"\",\"\"],[11539,\"Welcome3 HW JSON monitoring Active\",3,-1,2,\"\",\"\",\"Welcome3 HW JSON monitoring Active\",1,1,\"\",\"\",\"\",\"\"]]}}";
+            //Console.WriteLine(teszt);
+            ProxyCommunication.ResponseJsonObject jsonObject = JsonConvert.DeserializeObject<ProxyCommunication.ResponseJsonObject>(responseData);
+
+            int hostidPozicio=getPositionHostid(jsonObject);
+            foreach (var item in jsonObject.items.data)
             {
-                Console.WriteLine(item);
+                Console.WriteLine(item[hostidPozicio]);
+
             }
-            
-            
-           
+
+            //Console.WriteLine(valami);
+            //byteArrayData2.Select(d => String.Format("{0:X}", d))
+
+
+
+
+
+
+
             Console.ReadLine();
 
         }
+
+        public static int getPositionHostid(ProxyCommunication.ResponseJsonObject jsonObject)
+        {
+            int hostid_pos = 0;
+            foreach (var item in jsonObject.items.fields)
+            {
+                if (item.Equals("hostid"))
+                    return hostid_pos;
+                else
+                    hostid_pos++;
+            }
+            return -1;
+        }
+
+
+
+
+
+
+
+
+
+
+
 
         public static void ZabbixAgent()
         {
