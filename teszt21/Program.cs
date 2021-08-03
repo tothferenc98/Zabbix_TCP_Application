@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using System.Net;
 using log4net;
 using log4net.Config;
+using System.Collections.Generic;
 
 [assembly: XmlConfigurator(Watch = true)]
 
@@ -38,23 +39,68 @@ namespace Zabbix_TCP_Application
             ProxyCommunication.ResponseJsonObject jsonObject = JsonConvert.DeserializeObject<ProxyCommunication.ResponseJsonObject>(responseData);
 
             int hostidPozicio=getPositionHostid(jsonObject);
+            int keyPozicio = getPositionKey(jsonObject);
+            Dictionary<int, List<string>> dictItem = new Dictionary<int, List<string>>();
             foreach (var item in jsonObject.items.data)
             {
-                Console.WriteLine(item[hostidPozicio]);
+                if (!dictItem.Keys.Contains(Convert.ToInt32(item[hostidPozicio]))){
+                    List<string> listItem = new List<string>();
+                    foreach (var item2 in jsonObject.items.data)
+                    {
+                        if (item[hostidPozicio].Equals(item2[hostidPozicio]))
+                        {
+                            if (Convert.ToString(item2[keyPozicio]).Contains("{$"))
+                            {
+                                string temp = Convert.ToString(item2[keyPozicio]);
+                                temp=temp.Substring(temp.IndexOf("{"), (temp.IndexOf("}")+1)- temp.IndexOf("{"));
+                                string temp2 = getReplaceData(Convert.ToInt32(item[hostidPozicio]), temp, jsonObject);
+                                item2[keyPozicio]=Convert.ToString(item2[keyPozicio]).Replace(temp, temp2);
+                                
 
+
+                            }
+
+
+                            listItem.Add(Convert.ToString(item2[keyPozicio]));
+                        }
+                    }
+                    dictItem.Add(Convert.ToInt32(item[hostidPozicio]), listItem);
+                }
             }
+
+            foreach (var item in dictItem)
+            {
+                Console.WriteLine(item.Key);
+                foreach (var item2 in item.Value)
+                {
+                    Console.WriteLine(item2);
+                }
+                Console.WriteLine();
+            }
+
+
 
             //Console.WriteLine(valami);
             //byteArrayData2.Select(d => String.Format("{0:X}", d))
 
 
 
-
-
-
-
             Console.ReadLine();
 
+        }
+
+        public static string getReplaceData(int hostid, string macro, ProxyCommunication.ResponseJsonObject jsonObject)
+        {
+            //Console.WriteLine("hostid: "+ hostid+", key: " + original);
+            foreach (var item in jsonObject.hostmacro.data)
+            {
+                if (hostid.Equals(Convert.ToInt32(item[1])) && macro.Equals(Convert.ToString(item[2])))
+                {
+                    return Convert.ToString(item[3]);
+                }
+                
+            }
+            return "";
         }
 
         public static int getPositionHostid(ProxyCommunication.ResponseJsonObject jsonObject)
@@ -69,7 +115,30 @@ namespace Zabbix_TCP_Application
             }
             return -1;
         }
-
+        public static int getPositionKey(ProxyCommunication.ResponseJsonObject jsonObject)
+        {
+            int key_pos = 0;
+            foreach (var item in jsonObject.items.fields)
+            {
+                if (item.Equals("key_"))
+                    return key_pos;
+                else
+                    key_pos++;
+            }
+            return -1;
+        }
+        /*
+       class Item
+       {
+           public List<Items> listItem { get; set; }
+       }
+       class Items
+       {
+           public int hostid { get; set; }
+           public List<string> keys { get; set; }
+       }
+       */
+        
 
 
 
