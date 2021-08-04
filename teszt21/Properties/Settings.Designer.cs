@@ -67,5 +67,23 @@ namespace Zabbix_TCP_Application.Properties {
                 return ((int)(this["BUFFER_SIZE"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("gyakornok_tf_proxy")]
+        public string PROXY_NAME {
+            get {
+                return ((string)(this["PROXY_NAME"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("3.4.13")]
+        public string PROXY_VERSION {
+            get {
+                return ((string)(this["PROXY_VERSION"]));
+            }
+        }
     }
 }

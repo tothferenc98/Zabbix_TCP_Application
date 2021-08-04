@@ -34,22 +34,22 @@ namespace Zabbix_TCP_Application
             dictKeyValue.Add("agent.hostname", HOSTNAME);
             dictKeyValue.Add("agent.ping", "1");
             dictKeyValue.Add("agent.version", "TCP_program");
-            dictKeyValue.Add("net.if.list", Program.GetProcessNumber().ToString());
-            dictKeyValue.Add("perf_counter[\\234(_Total)\\1402]", Program.GetAvgDiskReadQueueLength());
-            dictKeyValue.Add("perf_counter[\\234(_Total)\\1404]", Program.GetAvgDiskWriteQueueLength());
-            dictKeyValue.Add("perf_counter[\\2\\16]", Program.GetDiskReadsSec());
-            dictKeyValue.Add("perf_counter[\\2\\18]", Program.GetDiskWritesSec());
-            dictKeyValue.Add("perf_counter[\\2\\250]", Program.GetPerformanceCounter2_250().ToString());
-            dictKeyValue.Add("proc.num[]", Program.GetProcessNumber().ToString());
+            dictKeyValue.Add("net.if.list", AgentCommunication.ZabbixAgentUtility.GetProcessNumber().ToString());
+            dictKeyValue.Add("perf_counter[\\234(_Total)\\1402]", AgentCommunication.ZabbixAgentUtility.GetAvgDiskReadQueueLength());
+            dictKeyValue.Add("perf_counter[\\234(_Total)\\1404]", AgentCommunication.ZabbixAgentUtility.GetAvgDiskWriteQueueLength());
+            dictKeyValue.Add("perf_counter[\\2\\16]", AgentCommunication.ZabbixAgentUtility.GetDiskReadsSec());
+            dictKeyValue.Add("perf_counter[\\2\\18]", AgentCommunication.ZabbixAgentUtility.GetDiskWritesSec());
+            dictKeyValue.Add("perf_counter[\\2\\250]", AgentCommunication.ZabbixAgentUtility.GetPerformanceCounter2_250().ToString());
+            dictKeyValue.Add("proc.num[]", AgentCommunication.ZabbixAgentUtility.GetProcessNumber().ToString());
             dictKeyValue.Add("system.cpu.load[percpu,avg1]", "0.000000");
             dictKeyValue.Add("system.cpu.load[percpu,avg5]", "0.000000");
             dictKeyValue.Add("system.localtime[utc]", clock.ToString());
-            dictKeyValue.Add("system.swap.size[,free]", Program.GetAvailableVirtualMemoryInBytes().ToString());
-            dictKeyValue.Add("system.swap.size[,total]", Program.GetTotalVirtualMemoryInBytes().ToString());
-            dictKeyValue.Add("system.uname", Program.GetSystemUname());
-            dictKeyValue.Add("system.uptime", Program.GetUpTime());
-            dictKeyValue.Add("vm.memory.size[free]", Program.GetAvailableMemoryInBytes().ToString());
-            dictKeyValue.Add("vm.memory.size[total]", Program.GetTotalMemoryInBytes().ToString());
+            dictKeyValue.Add("system.swap.size[,free]", AgentCommunication.ZabbixAgentUtility.GetAvailableVirtualMemoryInBytes().ToString());
+            dictKeyValue.Add("system.swap.size[,total]", AgentCommunication.ZabbixAgentUtility.GetTotalVirtualMemoryInBytes().ToString());
+            dictKeyValue.Add("system.uname", AgentCommunication.ZabbixAgentUtility.GetSystemUname());
+            dictKeyValue.Add("system.uptime", AgentCommunication.ZabbixAgentUtility.GetUpTime());
+            dictKeyValue.Add("vm.memory.size[free]", AgentCommunication.ZabbixAgentUtility.GetAvailableMemoryInBytes().ToString());
+            dictKeyValue.Add("vm.memory.size[total]", AgentCommunication.ZabbixAgentUtility.GetTotalMemoryInBytes().ToString());
             #endregion változók
 
             string secondResponseData = String.Empty;
