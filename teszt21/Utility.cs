@@ -8,7 +8,7 @@ using log4net;
 
 namespace Zabbix_TCP_Application
 {
-    class Utility
+    partial class Utility
     {
         #region konstansok
         public static string HOSTNAME = Properties.Settings.Default.HOSTNAME;
