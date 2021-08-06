@@ -96,6 +96,8 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
     <Compile Include="ProxyCommunication\ItemCheckData.cs" />
+    <Compile Include="ProxyCommunication\RequestJsonData.cs" />
+    <Compile Include="ProxyCommunication\RequestJsonObject.cs" />
     <Compile Include="ProxyCommunication\ResponseJsonData.cs" />
     <Compile Include="ProxyCommunication\ResponseJsonObject.cs" />
     <Compile Include="Utility.cs" />

@@ -8,8 +8,8 @@ namespace Zabbix_TCP_Application.ProxyCommunication
 {
     class ItemCheckData
     {
-        public string ItemId { get; set; }
-        public string HostId { get; set; }
+        public int ItemId { get; set; }
+        public int HostId { get; set; }
         public string Key { get; set; }
         public string Value { get; set; }
 
