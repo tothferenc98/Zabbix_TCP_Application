@@ -13,9 +13,11 @@ namespace Zabbix_TCP_Application
         #region konstansok
         public static string HOSTNAME = Properties.Settings.Default.HOSTNAME;
         public static string ZABBIX_NAME = Properties.Settings.Default.ZABBIX_NAME;
-        public static int ZABBIX_PORT = Properties.Settings.Default.ZABBIX_PORT; //pl 80
+        public static int ZABBIX_PORT = Properties.Settings.Default.ZABBIX_PORT; 
         public static int CONNECT_DELAY = Properties.Settings.Default.CONNECT_DELAY;
         public static int BUFFER_SIZE = Properties.Settings.Default.BUFFER_SIZE;
+        public static string PROXY_NAME = Properties.Settings.Default.PROXY_NAME;
+        public static string PROXY_VERSION = Properties.Settings.Default.PROXY_VERSION;
         public static Encoding ENCODING = Encoding.ASCII;
         #endregion konstansok
 

@@ -10,16 +10,16 @@ namespace Zabbix_TCP_Application.ProxyCommunication
     {
         public int ItemId { get; set; }
         public int HostId { get; set; }
+        public string HostName { get; set; }
         public string Key { get; set; }
-        public string Value { get; set; }
 
         public override bool Equals(object obj)
         {
             return obj is ItemCheckData data &&
                    ItemId == data.ItemId &&
                    HostId == data.HostId &&
-                   Key == data.Key &&
-                   Value == data.Value;
+                   HostName == data.HostName &&
+                   Key == data.Key;
         }
 
         public override int GetHashCode()

@@ -10,7 +10,7 @@ namespace Zabbix_TCP_Application.ProxyCommunication
     class ResponseJsonObject
     {
         //public ResponseJsonData globalmacro { get; set; }
-        //public ResponseJsonData hosts { get; set; }
+        public ResponseJsonData hosts { get; set; }
         public ResponseJsonData hostmacro { get; set; }
         [JsonProperty("interface")]
         public ResponseJsonData interface_ { get; set; }
