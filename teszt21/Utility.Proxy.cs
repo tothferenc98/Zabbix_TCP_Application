@@ -3,8 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Zabbix_TCP_Application
 {
@@ -89,7 +87,6 @@ namespace Zabbix_TCP_Application
                                     id = id
                                 });
                                 id++;
-
                             }
                         }
                     }
@@ -355,7 +352,6 @@ namespace Zabbix_TCP_Application
             }
             return -1;
         }
-
         public static int getPositionHostsHostId(ProxyCommunication.ResponseJsonObject jsonObject)
         {
             int hostid_pos = 0;
@@ -368,7 +364,6 @@ namespace Zabbix_TCP_Application
             }
             return -1;
         }
-
         public static int getPositionHostsHostName(ProxyCommunication.ResponseJsonObject jsonObject)
         {
             int hostname_pos = 0;
