@@ -3,12 +3,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace Zabbix_TCP_Application
 {
     partial class Utility
     {
-        public static string ProcessingAndRequest(ProxyCommunication.ResponseJsonObject jsonObject)
+        public static async Task<string> ProcessingAndRequest(ProxyCommunication.ResponseJsonObject jsonObject)
         {
             List<ProxyCommunication.ItemCheckData> itemCheckDataObjectList = new List<ProxyCommunication.ItemCheckData>();
 
@@ -38,6 +39,7 @@ namespace Zabbix_TCP_Application
                 Console.WriteLine("itemid: {0}, hostid: {1}, hostname: {2}, key: {3} ", item.ItemId, item.HostId, item.HostName, item.Key);
 
             }
+            Console.WriteLine();
 
             string secondResponseData = String.Empty;
             ProxyCommunication.RequestJsonObject requestJsonObject = new ProxyCommunication.RequestJsonObject();
@@ -56,7 +58,7 @@ namespace Zabbix_TCP_Application
                             
                             if (item.Key.Substring(0, item.Key.IndexOf('[')).Equals("web.page.get"))
                             {
-                                string value = WebPageGet(item.Key);
+                                string value = await WebPageGet(item.Key);
                                 if (!value.Equals(String.Empty))
                                 {
                                     listRequestJsonData.Add(new ProxyCommunication.RequestJsonData()
@@ -76,8 +78,11 @@ namespace Zabbix_TCP_Application
                             }
                             if (item.Key.Substring(0, item.Key.IndexOf('[')).Equals("net.tcp.port"))
                             {
-                                string value = NetTcpPort(item.Key);
-
+                                string value = await TcpPortTest(item.Key);
+                                if (value.Equals("0"))
+                                {
+                                    Log.InfoFormat("{0} csatlakozás sikertelen. (Hostname: {1})", item.Key, item.HostName);
+                                }
                                 listRequestJsonData.Add(new ProxyCommunication.RequestJsonData()
                                 {
                                     itemid = item.ItemId,
@@ -102,39 +107,44 @@ namespace Zabbix_TCP_Application
                 }
                 else
                 {
-                    //Log.Error("MakeAgentDataMessage: Kaptunk választ, de a json data része üres ");
+                    Log.Error("ProcessingAndRequest: Kaptunk választ, de a json data része üres ");
                     return String.Empty;
                 }
                 return secondResponseData;
             }
             catch (Exception e)
             {
-                //    Log.Error("MakeAgentDataMessage.Exception: ", e);
+                Log.Error("ProcessingAndRequest.Exception: ", e);
                 return String.Empty;
 
             }
         }
 
-        public static string WebPageGet(string key)
+        public static async Task<string> WebPageGet(string key)
         {
             key = key.Substring(key.IndexOf('[') + 1, key.IndexOf(']') - key.IndexOf('[') - 1);
             var splitted = key.Split(',');
             string ip = splitted[0];
             int port = Convert.ToInt32(splitted[2]);
-            //Console.WriteLine(port);
-            try
+            if (await TcpPortTest(String.Format("[{0},{1}]",ip,port))=="1")
             {
-                string downloadedString = ConnectJsonDownloadString(ip, port);
-                //Console.WriteLine(downloadedString);
-                return downloadedString;
+                //Console.WriteLine(port);
+                try
+                {
+                    string downloadedString = WebPageGetConnectJson(ip, port);
+                    //Console.WriteLine(downloadedString);
+                    return downloadedString;
+                }
+                catch (Exception)
+                {
+                    //Console.WriteLine("sikertelen");
+                    return "";
+                }
             }
-            catch (Exception)
-            {
-                //Console.WriteLine("sikertelen");
-                return "";
-            }
-        }
+            return "";
 
+        }
+        /*
         public static string NetTcpPort(string key)
         {
             key = key.Substring(key.IndexOf('[') + 1, key.IndexOf(']') - key.IndexOf('[') - 1);
@@ -155,11 +165,12 @@ namespace Zabbix_TCP_Application
                 //Console.WriteLine("sikertelen {0}",e);
                 return "0";
             }
-        }
+        }*/
 
 
-        public static string ConnectJsonDownloadString(string name, int webpagePort)
+        public static string WebPageGetConnectJson(string name, int webpagePort)
         {
+
             try
             {
                 byte[] jsonBytes = new byte[BUFFER_SIZE]; 
@@ -167,7 +178,7 @@ namespace Zabbix_TCP_Application
                 Array.Copy(ENCODING.GetBytes(json), jsonBytes, json.Length);
                 jsonBytes = TrimEnd(jsonBytes);
 
-                byte[] jsonBytesRespond = ConnectDownloadByteArray(jsonBytes, name, webpagePort);
+                byte[] jsonBytesRespond = WebPageGetConnect(jsonBytes, name, webpagePort);
                 if (!jsonBytesRespond.SequenceEqual(new byte[0]))
                 {
                     string resultJson = ENCODING.GetString(jsonBytesRespond, 0, jsonBytesRespond.Length);
@@ -182,7 +193,7 @@ namespace Zabbix_TCP_Application
             }
             catch (Exception e)
             {
-                Console.WriteLine("Hiba a ConnectJsonDownloadString-ben");
+                Console.WriteLine("Hiba a WebPageGetConnectJson-ben");
                 return "";
             }
             
@@ -190,7 +201,7 @@ namespace Zabbix_TCP_Application
         }
 
 
-        public static byte[] ConnectDownloadByteArray(byte[] data, string name, int webpagePort)
+        public static byte[] WebPageGetConnect(byte[] data, string name, int webpagePort)
         {
             byte[] error = new byte[0];
             try
@@ -238,35 +249,73 @@ namespace Zabbix_TCP_Application
 
         }
 
-        public static Dictionary<int, List<string>> MakeHostIdKeyDict(Dictionary<int, List<string>> dictItem, ProxyCommunication.ResponseJsonObject jsonObject)
+        public static void ReplaceMacro(ProxyCommunication.ResponseJsonObject jsonObject)
         {
             foreach (var item in jsonObject.items.data)
             {
-                if (!dictItem.Keys.Contains(Convert.ToInt32(item[getPositionItemsHostid(jsonObject)])))
+                List<string> listItem = new List<string>();
+
+                if (Convert.ToString(item[getPositionItemsKey(jsonObject)]).Contains("{$"))
                 {
-                    List<string> listItem = new List<string>();
-
-                    foreach (var item2 in jsonObject.items.data)
-                    {
-
-                        if (item[getPositionItemsHostid(jsonObject)].Equals(item2[getPositionItemsHostid(jsonObject)]))
-                        {
-                            if (Convert.ToString(item2[getPositionItemsKey(jsonObject)]).Contains("{$"))
-                            {
-                                string tempKey = Convert.ToString(item2[getPositionItemsKey(jsonObject)]);
-                                string tempReplacedData = getReplaceData(Convert.ToInt32(item[getPositionItemsHostid(jsonObject)]), tempKey, jsonObject);
-                                item2[getPositionItemsKey(jsonObject)] = Convert.ToString(item2[getPositionItemsKey(jsonObject)]).Replace(tempKey, tempReplacedData);
-                            }
-
-                            listItem.Add(Convert.ToString(item2[getPositionItemsKey(jsonObject)]));
-                        }
-                    }
-                    dictItem.Add(Convert.ToInt32(item[getPositionItemsHostid(jsonObject)]), listItem);
-
+                    string tempKey = Convert.ToString(item[getPositionItemsKey(jsonObject)]);
+                    string tempReplacedData = getReplaceData(Convert.ToInt32(item[getPositionItemsHostid(jsonObject)]), tempKey, jsonObject);
+                    item[getPositionItemsKey(jsonObject)] = Convert.ToString(item[getPositionItemsKey(jsonObject)]).Replace(tempKey, tempReplacedData);
                 }
-            }
-            return dictItem;
+
+                listItem.Add(Convert.ToString(item[getPositionItemsKey(jsonObject)]));
+            } 
         }
+
+        static async Task<string> TcpPortTest(string key)
+        {
+            key = key.Substring(key.IndexOf('[') + 1, key.IndexOf(']') - key.IndexOf('[') - 1);
+            var splitted = key.Split(',');
+            string ip = splitted[0];
+            int port = Convert.ToInt32(splitted[1]);
+
+            TcpClientWrapper tcpClientWrapper = new TcpClientWrapper();
+
+            try
+            {
+                await tcpClientWrapper.ConnectAsync(ip,port,TimeSpan.FromSeconds(1));
+                //Console.WriteLine("{0}:{1} tested - it's open",ip,port);
+                return "1";
+            }
+            catch (Exception ex)
+            {
+                //Console.WriteLine($"{ip}:{port} tested - it's not open. Exception: {ex.Message}");
+                return "0";
+            }
+
+        }
+    
+
+        public class TcpException : Exception
+        {
+            public TcpException(string msg) : base(msg) { }
+        }
+        public class TcpClientWrapper
+        {
+            public async Task ConnectAsync(string ip, int port, TimeSpan connectTimeout)
+            {
+                using (var tcpClient = new TcpClient())
+                {
+                    var cancelTask = Task.Delay(connectTimeout);
+                    var connectTask = tcpClient.ConnectAsync(ip, port);
+
+                    //double await so if cancelTask throws exception, this throws it
+                    await Task.WhenAny(connectTask, cancelTask);
+
+                    if (cancelTask.IsCompleted)
+                    {
+                        //If cancelTask and connectTask both finish at the same time,
+                        //we'll consider it to be a timeout. 
+                        throw new TcpException("Timed out");
+                    }
+                };
+            }
+        }
+
         public static string getReplaceData(int hostid, string macro, ProxyCommunication.ResponseJsonObject jsonObject)
         {
             foreach (var item in jsonObject.hostmacro.data)
