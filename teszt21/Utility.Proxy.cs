@@ -37,7 +37,7 @@ namespace Zabbix_TCP_Application
             foreach (var item in itemCheckDataObjectList)
             {
                 Console.WriteLine("itemid: {0}, hostid: {1}, hostname: {2}, key: {3} ", item.ItemId, item.HostId, item.HostName, item.Key);
-
+                //TODO:TOSTRING
             }
             Console.WriteLine();
 
@@ -49,16 +49,19 @@ namespace Zabbix_TCP_Application
                 {
                     List<ProxyCommunication.RequestJsonData> listRequestJsonData = new List<ProxyCommunication.RequestJsonData>();
                     int id = 1;
-                    var rand = new Random();
+                    var rand = new Random(); //TODO: ne random legyen
                     int ns = rand.Next(000000001, 999999999);
                     foreach (var item in itemCheckDataObjectList)
                     {
+                        bool added = false;
                         if (item.Key.Contains('['))
                         {
                             
                             if (item.Key.Substring(0, item.Key.IndexOf('[')).Equals("web.page.get"))
                             {
-                                string value = await WebPageGet(item.Key);
+                                bool found = Search(itemCheckDataObjectList, item.Key);
+                                string value = await WebPageGet(item.Key,found);
+                                AddValueItemCheckDataObjectList(itemCheckDataObjectList, item.Key, value);
                                 if (!value.Equals(String.Empty))
                                 {
                                     listRequestJsonData.Add(new ProxyCommunication.RequestJsonData()
@@ -70,6 +73,7 @@ namespace Zabbix_TCP_Application
                                         id = id
                                     });
                                     id++;
+                                    added = true;
                                 }
                                 else
                                 {
@@ -79,6 +83,7 @@ namespace Zabbix_TCP_Application
                             if (item.Key.Substring(0, item.Key.IndexOf('[')).Equals("net.tcp.port"))
                             {
                                 string value = await TcpPortTest(item.Key);
+                                AddValueItemCheckDataObjectList(itemCheckDataObjectList, item.Key, value);
                                 if (value.Equals("0"))
                                 {
                                     Log.InfoFormat("{0} csatlakozás sikertelen. (Hostname: {1})", item.Key, item.HostName);
@@ -92,7 +97,12 @@ namespace Zabbix_TCP_Application
                                     id = id
                                 });
                                 id++;
+                                added = true;
                             }
+                        }
+                        if (!added)
+                        {
+                            Log.InfoFormat("{0} A feldolgozás sikertelen. (Hostname: {1})", item.Key, item.HostName);
                         }
                     }
                     requestJsonObject.historydata = listRequestJsonData;
@@ -103,6 +113,13 @@ namespace Zabbix_TCP_Application
                     string serializedJson = JsonConvert.SerializeObject(requestJsonObject);
                     //Console.WriteLine(serializedJson);
                     secondResponseData = ConnectJson(serializedJson);
+
+                    //Ellenőrzés
+                    //foreach (var item in itemCheckDataObjectList)
+                    //{
+                    //    Console.WriteLine("itemid: {0}, hostid: {1}, hostname: {2}, key: {3}, value: {4} ", item.ItemId, item.HostId, item.HostName, item.Key, item.Value);
+
+                    //}
 
                 }
                 else
@@ -120,15 +137,16 @@ namespace Zabbix_TCP_Application
             }
         }
 
-        public static async Task<string> WebPageGet(string key)
+        public static async Task<string> WebPageGet(string key, bool found)
         {
-            key = key.Substring(key.IndexOf('[') + 1, key.IndexOf(']') - key.IndexOf('[') - 1);
-            var splitted = key.Split(',');
+            string key2 = key.Substring(key.IndexOf('[') + 1, key.IndexOf(']') - key.IndexOf('[') - 1);
+            var splitted = key2.Split(',');
             string ip = splitted[0];
             int port = Convert.ToInt32(splitted[2]);
-            if (await TcpPortTest(String.Format("[{0},{1}]",ip,port))=="1")
+
+
+            if (found) //már van hozzá net.tcp.port 1-es értékkel  //TODO:KISZEDNI
             {
-                //Console.WriteLine(port);
                 try
                 {
                     string downloadedString = WebPageGetConnectJson(ip, port);
@@ -141,7 +159,25 @@ namespace Zabbix_TCP_Application
                     return "";
                 }
             }
-            return "";
+            else
+            {
+                if (await TcpPortTest(String.Format("[{0},{1}]", ip, port)) == "1")
+                {
+                    //Console.WriteLine(port);
+                    try
+                    {
+                        string downloadedString = WebPageGetConnectJson(ip, port);
+                        //Console.WriteLine(downloadedString);
+                        return downloadedString;
+                    }
+                    catch (Exception)
+                    {
+                        //Console.WriteLine("sikertelen");
+                        return "";
+                    }
+                }
+                return "";
+            }
 
         }
         /*
@@ -255,7 +291,7 @@ namespace Zabbix_TCP_Application
             {
                 List<string> listItem = new List<string>();
 
-                if (Convert.ToString(item[getPositionItemsKey(jsonObject)]).Contains("{$"))
+                if (Convert.ToString(item[getPositionItemsKey(jsonObject)]).Contains("{$")) //TODO:felvinni settingsbe
                 {
                     string tempKey = Convert.ToString(item[getPositionItemsKey(jsonObject)]);
                     string tempReplacedData = getReplaceData(Convert.ToInt32(item[getPositionItemsHostid(jsonObject)]), tempKey, jsonObject);
@@ -315,7 +351,37 @@ namespace Zabbix_TCP_Application
                 };
             }
         }
+        
+        public static void AddValueItemCheckDataObjectList(List<ProxyCommunication.ItemCheckData> itemCheckDataObjectList, string key, string value)
+        {
+            foreach (var item in itemCheckDataObjectList)
+            {
+                if (item.Key.Equals(key))
+                {
+                    item.Value = value;
+                }
+            }
+        }
 
+        public static bool Search(List<ProxyCommunication.ItemCheckData> itemCheckDataObjectList, string key)
+        {
+
+            key = key.Substring(key.IndexOf('[') + 1, key.IndexOf(']') - key.IndexOf('[') - 1);
+            var splitted = key.Split(',');
+            string ip = splitted[0];
+            int port = Convert.ToInt32(splitted[2]);
+            string search = String.Format("net.tcp.port[{0},{1}]", ip, port);
+            foreach (var item in itemCheckDataObjectList)
+            {
+                if (item.Key.Equals(search) && item.Value.Equals("1"))
+                {
+                    //Console.WriteLine("TRUE");
+                    return true;
+                    
+                }
+            }
+            return false;
+        }
         public static string getReplaceData(int hostid, string macro, ProxyCommunication.ResponseJsonObject jsonObject)
         {
             foreach (var item in jsonObject.hostmacro.data)

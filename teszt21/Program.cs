@@ -13,7 +13,7 @@ namespace Zabbix_TCP_Application
 {
     class Program
     {
-
+        public static Version version = new Version(0,9,0); 
         #region konstansok
         //public static string HOSTNAME = Properties.Settings.Default.HOSTNAME;
         public static string ZABBIX_NAME = Properties.Settings.Default.ZABBIX_NAME;
@@ -34,17 +34,25 @@ namespace Zabbix_TCP_Application
 
             try
             {
-                Log.Debug("Start");
+                Log.DebugFormat("Start {0}",version);
                 Log.Debug("Settings beállításai: PROXY_NAME: " + PROXY_NAME + ", ZABBIX_NAME: " + ZABBIX_NAME + ", ZABBIX_PORT: " + ZABBIX_PORT + ", CONNECT_DELAY: " + CONNECT_DELAY + ", BUFFER_SIZE: " + BUFFER_SIZE + ", PROXY_VERSION: " + PROXY_VERSION);
                 string jsonData = String.Format(@"{{""request"": ""proxy config"", ""host"": ""{0}"", ""version"": ""{1}""}}", PROXY_NAME, PROXY_VERSION);
                 string responseData = ConnectJson(jsonData);
-                ProxyCommunication.ResponseJsonObject jsonObject = JsonConvert.DeserializeObject<ProxyCommunication.ResponseJsonObject>(responseData);
+                if (!responseData.Equals(String.Empty))
+                {
+                    ProxyCommunication.ResponseJsonObject jsonObject = JsonConvert.DeserializeObject<ProxyCommunication.ResponseJsonObject>(responseData);
 
-                ReplaceMacro(jsonObject);
+                    ReplaceMacro(jsonObject);
 
-                await ProcessingAndRequest(jsonObject);
+                    await ProcessingAndRequest(jsonObject);
 
-                Console.ReadLine();
+                    Console.ReadLine();
+                }
+                else
+                {
+                    Log.Warn("A proxy config feldolgozása során hiba lépett fel!");
+                }
+                
             }
             catch (Exception e)
             {
