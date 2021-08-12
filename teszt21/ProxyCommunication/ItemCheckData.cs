@@ -31,7 +31,7 @@ namespace Zabbix_TCP_Application.ProxyCommunication
 
         public override string ToString()
         {
-            return base.ToString();
+            return String.Format("itemid: {0}, hostname: {1}, key: {2} ", ItemId, HostName, Key);
         }
     }
 }

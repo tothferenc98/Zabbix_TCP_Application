@@ -11,10 +11,8 @@ namespace Zabbix_TCP_Application
     partial class Utility
     {
         #region konstansok
-        public static string HOSTNAME = Properties.Settings.Default.HOSTNAME;
         public static string ZABBIX_NAME = Properties.Settings.Default.ZABBIX_NAME;
         public static int ZABBIX_PORT = Properties.Settings.Default.ZABBIX_PORT; 
-        public static int CONNECT_DELAY = Properties.Settings.Default.CONNECT_DELAY;
         public static int BUFFER_SIZE = Properties.Settings.Default.BUFFER_SIZE;
         public static string PROXY_NAME = Properties.Settings.Default.PROXY_NAME;
         public static string PROXY_VERSION = Properties.Settings.Default.PROXY_VERSION;
@@ -33,7 +31,7 @@ namespace Zabbix_TCP_Application
             var rand = new Random();
             int ns = rand.Next(000000001, 999999999);
             Dictionary<string, string> dictKeyValue = new Dictionary<string, string>();
-            dictKeyValue.Add("agent.hostname", HOSTNAME);
+            dictKeyValue.Add("agent.hostname", "gyakornok_tf_app");
             dictKeyValue.Add("agent.ping", "1");
             dictKeyValue.Add("agent.version", "TCP_program");
             dictKeyValue.Add("net.if.list", AgentCommunication.ZabbixAgentUtility.GetProcessNumber().ToString());

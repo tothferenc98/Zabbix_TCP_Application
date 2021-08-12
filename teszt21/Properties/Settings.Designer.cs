@@ -25,15 +25,6 @@ namespace Zabbix_TCP_Application.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("gyakornok_tf_app")]
-        public string HOSTNAME {
-            get {
-                return ((string)(this["HOSTNAME"]));
-            }
-        }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("zabbix.beks.hu")]
         public string ZABBIX_NAME {
             get {
@@ -47,15 +38,6 @@ namespace Zabbix_TCP_Application.Properties {
         public int ZABBIX_PORT {
             get {
                 return ((int)(this["ZABBIX_PORT"]));
-            }
-        }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("20")]
-        public int CONNECT_DELAY {
-            get {
-                return ((int)(this["CONNECT_DELAY"]));
             }
         }
         

@@ -14,10 +14,10 @@ namespace Zabbix_TCP_Application.AgentCommunication
     class ZabbixAgentUtility
     {
         #region konstansok
-        public static string HOSTNAME = Properties.Settings.Default.HOSTNAME;
+        public static string HOSTNAME = "gyakornok_tf_app";
         public static string ZABBIX_NAME = Properties.Settings.Default.ZABBIX_NAME;
         public static int ZABBIX_PORT = Properties.Settings.Default.ZABBIX_PORT;
-        public static int CONNECT_DELAY = Properties.Settings.Default.CONNECT_DELAY;
+        public static int CONNECT_DELAY = 20;
         public static int BUFFER_SIZE = Properties.Settings.Default.BUFFER_SIZE;
         public static Encoding ENCODING = Encoding.ASCII;
         #endregion konstansok

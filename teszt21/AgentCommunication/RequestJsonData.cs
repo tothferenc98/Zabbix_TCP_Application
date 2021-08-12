@@ -8,7 +8,7 @@ namespace Zabbix_TCP_Application.AgentCommunication
 {
     public class RequestJsonData
     {
-        public string host = Properties.Settings.Default.HOSTNAME; // HOSTNAME;
+        public string host = "gyakornok_tf_app"; // HOSTNAME;
         public string key { get; set; }
         public string value { get; set; }
         public int id { get; set; }
