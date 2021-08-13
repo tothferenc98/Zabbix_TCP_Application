@@ -67,5 +67,14 @@ namespace Zabbix_TCP_Application.Properties {
                 return ((string)(this["PROXY_VERSION"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("{$")]
+        public string MACRO_START {
+            get {
+                return ((string)(this["MACRO_START"]));
+            }
+        }
     }
 }

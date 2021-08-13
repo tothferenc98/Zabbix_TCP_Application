@@ -12,7 +12,7 @@ namespace Zabbix_TCP_Application
 {
     class Program
     {
-        public static Version version = new Version(0,9,1); 
+        public static Version version = new Version(0,9,2); 
         #region konstansok
         public static string ZABBIX_NAME = Properties.Settings.Default.ZABBIX_NAME;
         public static int ZABBIX_PORT = Properties.Settings.Default.ZABBIX_PORT;
@@ -24,11 +24,9 @@ namespace Zabbix_TCP_Application
 
         private static readonly ILog Log = LogManager.GetLogger("Log");
 
-
         static void Main(string[] args)
         {
             //AgentCommunication.ZabbixAgentUtility.ZabbixAgent();
-
             try
             {
                 Log.DebugFormat("Start {0}", version);
@@ -42,8 +40,6 @@ namespace Zabbix_TCP_Application
                     Utility.ReplaceMacro(jsonObject);
 
                     Utility.ProcessingAndRequest(jsonObject);
-
-                    Console.ReadLine();
                 }
                 else
                 {

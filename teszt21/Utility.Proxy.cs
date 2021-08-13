@@ -54,8 +54,6 @@ namespace Zabbix_TCP_Application
                 {
                     List<ProxyCommunication.RequestJsonData> listRequestJsonData = new List<ProxyCommunication.RequestJsonData>();
                     Int32 id = 1;
-                    var rand = new Random(); //TODO: ne random legyen
-                    int ns = rand.Next(000000001, 999999999);
 
                     Parallel.ForEach(itemCheckDataObjectList, async item =>
                     {
@@ -67,10 +65,10 @@ namespace Zabbix_TCP_Application
                         switch (keyName)
                         {
                             case "web.page.get":
-                                WEBPAGEGET(item, listRequestJsonData, itemCheckDataObjectList, id, ns, added);
+                                WEBPAGEGET(item, listRequestJsonData, itemCheckDataObjectList, id, added);
                                 break;
                             case "net.tcp.port":
-                                await NETTCPPORT(item, listRequestJsonData, itemCheckDataObjectList, id, ns, added);
+                                await NETTCPPORT(item, listRequestJsonData, itemCheckDataObjectList, id, added);
                                 break;
                             default:
                                 break;
@@ -84,7 +82,7 @@ namespace Zabbix_TCP_Application
 
                     requestJsonObject.historydata = listRequestJsonData;
                     requestJsonObject.clock = Convert.ToInt32(DateTimeOffset.Now.ToUnixTimeSeconds().ToString());
-                    requestJsonObject.ns = ns;
+                    requestJsonObject.ns = getNanosec();
                     requestJsonObject.version = PROXY_VERSION;
 
                     string serializedJson = JsonConvert.SerializeObject(requestJsonObject);
@@ -105,7 +103,7 @@ namespace Zabbix_TCP_Application
             }
         }
 
-        public static void WEBPAGEGET(ProxyCommunication.ItemCheckData item, List<ProxyCommunication.RequestJsonData> listRequestJsonData, List<ProxyCommunication.ItemCheckData> itemCheckDataObjectList, Int32 id, int ns, Boolean added)
+        public static void WEBPAGEGET(ProxyCommunication.ItemCheckData item, List<ProxyCommunication.RequestJsonData> listRequestJsonData, List<ProxyCommunication.ItemCheckData> itemCheckDataObjectList, Int32 id, Boolean added)
         {
             string value = WebPageGet(item.Key);
             //AddValueItemCheckDataObjectList(itemCheckDataObjectList, item.Key, value);
@@ -115,17 +113,13 @@ namespace Zabbix_TCP_Application
                 {
                     itemid = item.ItemId,
                     clock = Convert.ToInt32(DateTimeOffset.Now.ToUnixTimeSeconds().ToString()),
-                    ns = ns,
+                    ns = getNanosec(),
                     value = value,
                     id = id
                 });
                 id++;
                 added = true;
 
-            }
-            else
-            {
-                //Console.WriteLine("Nem sikerült a weboldal letöltése");
             }
         }
 
@@ -142,9 +136,10 @@ namespace Zabbix_TCP_Application
                 //Console.WriteLine(downloadedString);
                 return downloadedString;
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 //Console.WriteLine("sikertelen");
+                Log.Debug("WebPageGet: ",e);
                 return "";
             }
         }
@@ -168,12 +163,17 @@ namespace Zabbix_TCP_Application
                         resultJson = resultJson.Substring(resultJson.IndexOf('{'));
                         return resultJson;
                     }
+                    else
+                    {
+                        JsonLog.Debug("WebPageGetConnectJson: nem HTTP/1.1 200 OK a válasz");
+                    }
                 }
                 return "";
             }
             catch (Exception e)
             {
                 Console.WriteLine("Hiba a WebPageGetConnectJson-ben");
+                JsonLog.Debug("WebPageGetConnectJson: Hiba: ",e);
                 return "";
             }
         }
@@ -208,19 +208,21 @@ namespace Zabbix_TCP_Application
                 catch (Exception e)
                 {
                     //ByteLog.Error("Hiba a Connect válasz részénél: ", e);
+                    Log.Debug("WebPageGetConnect: belső try-ban hiba: ", e);
                     return error;
                 }
             }
             catch (ArgumentNullException e)
             {
-                //ByteLog.Error("Hiba a Connect küldés részénél: ArgumentNullException:", e);
                 Console.WriteLine("Connect.ArgumentNullException: ", e);
+                ByteLog.Debug("WebPageGetConnect: hiba: ", e);
                 return error;
             }
             catch (SocketException e)
             {
                 //ByteLog.Error("Hiba a Connect küldés részénél: SocketException: ", e);
                 Console.WriteLine("Connect.SocketException: ", e);
+                ByteLog.Debug("WebPageGetConnect: ", e);
                 return error;
             }
 
@@ -233,7 +235,7 @@ namespace Zabbix_TCP_Application
             {
                 List<string> listItem = new List<string>();
                 string tempKey = Convert.ToString(item[getPositionItemsKey(jsonObject)]);
-                if (tempKey.Contains("{$")) //TODO:felvinni settingsbe
+                if (tempKey.Contains(Properties.Settings.Default.MACRO_START))
                 {
                     string tempReplacedData = getReplaceData(Convert.ToInt32(item[getPositionItemsHostid(jsonObject)]), tempKey, jsonObject);
                     item[getPositionItemsKey(jsonObject)] = Convert.ToString(item[getPositionItemsKey(jsonObject)]).Replace(tempKey, tempReplacedData);
@@ -243,7 +245,7 @@ namespace Zabbix_TCP_Application
             } 
         }
 
-        public static async Task NETTCPPORT(ProxyCommunication.ItemCheckData item, List<ProxyCommunication.RequestJsonData> listRequestJsonData, List<ProxyCommunication.ItemCheckData> itemCheckDataObjectList, Int32 id, int ns, Boolean added)
+        public static async Task NETTCPPORT(ProxyCommunication.ItemCheckData item, List<ProxyCommunication.RequestJsonData> listRequestJsonData, List<ProxyCommunication.ItemCheckData> itemCheckDataObjectList, Int32 id, Boolean added)
         {
             string value = await TcpPortTest(item.Key);
             //AddValueItemCheckDataObjectList(itemCheckDataObjectList, item.Key, value);
@@ -255,7 +257,7 @@ namespace Zabbix_TCP_Application
             {
                 itemid = item.ItemId,
                 clock = Convert.ToInt32(DateTimeOffset.Now.ToUnixTimeSeconds().ToString()),
-                ns = ns,
+                ns = getNanosec(),
                 value = value,
                 id = id
             });
@@ -432,6 +434,23 @@ namespace Zabbix_TCP_Application
                     hostname_pos++;
             }
             return -1;
+        }
+        public static int getNanosec() {
+            string value = Convert.ToString(Math.Abs(100000000 * Convert.ToInt32(DateTimeOffset.Now.ToUnixTimeSeconds().ToString())));
+            if (value.Length>=9)
+            {
+                return Convert.ToInt32(value.Substring(0, 9));
+            }
+            else
+            {
+                int temp = 9 - value.Length;
+                string value2 = value;
+                for (int i = 0; i < temp; i++)
+                {
+                    value2+='0';
+                }
+                return Convert.ToInt32(value2);
+            }
         }
     }
 }

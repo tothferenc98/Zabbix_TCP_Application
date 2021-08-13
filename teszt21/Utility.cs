@@ -60,7 +60,7 @@ namespace Zabbix_TCP_Application
                 {
                     int id = 1;
                     List<AgentCommunication.RequestJsonData> listRequestJsonData = new List<AgentCommunication.RequestJsonData>();
-                    foreach (var item in jsonObject.data) //TODO: linQ
+                    foreach (var item in jsonObject.data) 
                     {
                         if (dictKeyValue.ContainsKey(item.key))
                         {
@@ -147,7 +147,7 @@ namespace Zabbix_TCP_Application
 
                     JsonLog.InfoFormat("Received: {0}", resultJson);
                     Console.WriteLine("Received: {0}\n", resultJson);
-                    // TODO: BitConverter (GetBytes)
+                    // BitConverter (GetBytes)
                     if (((byte)(resultWithoutHeader.Length & 0xFF)).Equals(headerOriginal[5]) && ((byte)((resultWithoutHeader.Length >> 8) & 0xFF)).Equals(headerOriginal[6]) && ((byte)((resultWithoutHeader.Length >> 16) & 0xFF)).Equals(headerOriginal[7]) && ((byte)((resultWithoutHeader.Length >> 24) & 0xFF)).Equals(headerOriginal[8]))
                     {// Csomaghossz ellenőrzés
                         return resultJson;
@@ -204,7 +204,7 @@ namespace Zabbix_TCP_Application
                     // Receive the TcpServer.response.
 
                     // Buffer to store the response bytes.
-                    byte[] byteArrayData2 = new Byte[BUFFER_SIZE]; // TODO:Meg tudja mondani a stream, hogy mennyire van szükség? (availablebyte/readavailable)
+                    byte[] byteArrayData2 = new Byte[BUFFER_SIZE]; 
                     //visszaolvasás pufferére másik data deklarálása
                     // Read the first batch of the TcpServer response bytes.
                     int bytes = stream.Read(byteArrayData2, 0, byteArrayData2.Length);
@@ -212,7 +212,6 @@ namespace Zabbix_TCP_Application
                     //arraycopy
 
                     // Hexadecimális értékek logolása
-
                     ByteLog.InfoFormat("Received: {0}", String.Join(String.Empty, byteArrayData2.Select(d => String.Format("{0:X}", d))));
                     // Close everything.
                     stream.Close();
