@@ -11,6 +11,7 @@ namespace Zabbix_TCP_Application
     {
         public static string ProcessingAndRequest(ProxyCommunication.ResponseJsonObject jsonObject)
         {
+            WebPageGetLog.Debug("Start");
             List<ProxyCommunication.ItemCheckData> itemCheckDataObjectList = new List<ProxyCommunication.ItemCheckData>();
             MakeItemCheckDataObject(jsonObject, itemCheckDataObjectList);
 
@@ -133,7 +134,8 @@ namespace Zabbix_TCP_Application
             catch (Exception e)
             {
                 //Console.WriteLine("sikertelen");
-                Log.Debug("WebPageGet: ",e);
+                Log.Debug("WebPageGetProcessing: ", e);
+                WebPageGetLog.WarnFormat("WebPageGetProcessing: ", e);
                 return "";
             }
         }
@@ -147,11 +149,13 @@ namespace Zabbix_TCP_Application
                 string json = String.Format(@"GET HTTP/1.1");
                 Array.Copy(ENCODING.GetBytes(json), jsonBytes, json.Length);
                 jsonBytes = TrimEnd(jsonBytes);
+                WebPageGetLog.InfoFormat("WebPageGetConnectJson: Sent: {0}, web.page.get[{1},,{2}]", json, name, webpagePort);
 
                 byte[] jsonBytesRespond = WebPageGetConnect(jsonBytes, name, webpagePort);
                 if (!jsonBytesRespond.SequenceEqual(new byte[0]))
                 {
                     string resultJson = ENCODING.GetString(jsonBytesRespond, 0, jsonBytesRespond.Length);
+                    WebPageGetLog.InfoFormat("WebPageGetConnectJson: web.page.get[{1},,{2}] Received: {0}", resultJson, name, webpagePort);
                     if (resultJson.Contains("HTTP/1.1 200 OK"))
                     {
                         resultJson = resultJson.Substring(resultJson.IndexOf('{'));
@@ -159,7 +163,8 @@ namespace Zabbix_TCP_Application
                     }
                     else
                     {
-                        JsonLog.Debug("WebPageGetConnectJson: nem HTTP/1.1 200 OK a válasz");
+                        JsonLog.Warn("WebPageGetConnectJson: nem HTTP/1.1 200 OK a válasz");
+                        WebPageGetLog.WarnFormat("WebPageGetConnectJson: nem HTTP/1.1 200 OK a válasz. web.page.get[{0},,{1}]", name, webpagePort);
                     }
                 }
                 return "";
@@ -167,7 +172,8 @@ namespace Zabbix_TCP_Application
             catch (Exception e)
             {
                 Console.WriteLine("Hiba a WebPageGetConnectJson-ben");
-                JsonLog.Debug("WebPageGetConnectJson: Hiba: ",e);
+                JsonLog.Warn("WebPageGetConnectJson: Hiba: ",e);
+                WebPageGetLog.ErrorFormat("WebPageGetConnectJson: Hiba: web.page.get[{0},,{1}], {2}", name, webpagePort, e);
                 return "";
             }
         }
@@ -186,7 +192,7 @@ namespace Zabbix_TCP_Application
                 stream.Write(data, 0, data.Length);
 
                 // Hexadecimális értékek logolása
-                //ByteLog.DebugFormat("Sent:     {0}", String.Join(String.Empty, data.Select(d => String.Format("{0:X}", d))));
+                //WebPageGetLog.InfoFormat("WebPageGetConnect: Sent:     {0}", String.Join(String.Empty, data.Select(d => String.Format("{0:X}", d))));
 
                 try
                 {
@@ -194,7 +200,7 @@ namespace Zabbix_TCP_Application
                     int bytes = stream.Read(byteArrayData2, 0, byteArrayData2.Length);
                     byteArrayData2 = TrimEnd(byteArrayData2);
                     // Hexadecimális értékek logolása
-                    //ByteLog.InfoFormat("Received: {0}", String.Join(String.Empty, byteArrayData2.Select(d => String.Format("{0:X}", d))));
+                    //WebPageGetLog.InfoFormat("WebPageGetConnect: Received: {0}", String.Join(String.Empty, byteArrayData2.Select(d => String.Format("{0:X}", d))));
                     stream.Close();
                     client.Close();
                     return byteArrayData2;
@@ -202,7 +208,8 @@ namespace Zabbix_TCP_Application
                 catch (Exception e)
                 {
                     //ByteLog.Error("Hiba a Connect válasz részénél: ", e);
-                    ByteLog.WarnFormat("WebPageGetConnect: belső try-ban hiba: web.page.get[{0},,{1}]", name, webpagePort, e);
+                    ByteLog.WarnFormat("WebPageGetConnect: belső try-ban hiba: web.page.get[{0},,{1}]   {2}", name, webpagePort, e);
+                    WebPageGetLog.ErrorFormat("WebPageGetConnect: belső try-ban hiba: web.page.get[{0},,{1}]   {2}", name, webpagePort, e);
                     return error;
                 }
             }
@@ -210,6 +217,7 @@ namespace Zabbix_TCP_Application
             {
                 Console.WriteLine("Connect.ArgumentNullException: ", e);
                 ByteLog.WarnFormat("WebPageGetConnect: hiba: web.page.get[{0},,{1}]: {2}", name, webpagePort, e);
+                WebPageGetLog.ErrorFormat("WebPageGetConnect: hiba: web.page.get[{0},,{1}]: {2}", name, webpagePort, e);
                 return error;
             }
             catch (SocketException e)
@@ -217,6 +225,7 @@ namespace Zabbix_TCP_Application
                 //ByteLog.Error("Hiba a Connect küldés részénél: SocketException: ", e);
                 Console.WriteLine("Connect.SocketException: ", e);
                 ByteLog.WarnFormat("WebPageGetConnect: hiba:  web.page.get[{0},,{1}]:  {2}", name, webpagePort, e);
+                WebPageGetLog.ErrorFormat("WebPageGetConnect: hiba:  web.page.get[{0},,{1}]:  {2}", name, webpagePort, e);
                 return error;
             }
         }

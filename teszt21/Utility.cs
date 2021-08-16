@@ -22,6 +22,7 @@ namespace Zabbix_TCP_Application
         private static readonly ILog ByteLog = LogManager.GetLogger("ByteLog");
         private static readonly ILog JsonLog = LogManager.GetLogger("JsonLog");
         private static readonly ILog Log = LogManager.GetLogger("Log");
+        private static readonly ILog WebPageGetLog = LogManager.GetLogger("WebPageGetLog");
 
         public static string ConnectJson(string jsonData)
         {

@@ -10,7 +10,7 @@ namespace Zabbix_TCP_Application
 {
     class Program
     {
-        public static Version version = new Version(0,10,0); 
+        public static Version version = new Version(0,10,1); 
         #region konstansok
         public static string ZABBIX_NAME = Properties.Settings.Default.ZABBIX_NAME;
         public static int ZABBIX_PORT = Properties.Settings.Default.ZABBIX_PORT;
