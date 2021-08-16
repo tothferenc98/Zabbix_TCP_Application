@@ -209,7 +209,7 @@ namespace Zabbix_TCP_Application
                 {
                     //ByteLog.Error("Hiba a Connect válasz részénél: ", e);
                     ByteLog.WarnFormat("WebPageGetConnect: belső try-ban hiba: web.page.get[{0},,{1}]   {2}", name, webpagePort, e);
-                    WebPageGetLog.ErrorFormat("WebPageGetConnect: belső try-ban hiba: web.page.get[{0},,{1}]   {2}", name, webpagePort, e);
+                    WebPageGetLog.ErrorFormat("WebPageGetConnect: belső try-ban hiba (válasznál): web.page.get[{0},,{1}]   {2}", name, webpagePort, e);
                     return error;
                 }
             }
@@ -217,7 +217,7 @@ namespace Zabbix_TCP_Application
             {
                 Console.WriteLine("Connect.ArgumentNullException: ", e);
                 ByteLog.WarnFormat("WebPageGetConnect: hiba: web.page.get[{0},,{1}]: {2}", name, webpagePort, e);
-                WebPageGetLog.ErrorFormat("WebPageGetConnect: hiba: web.page.get[{0},,{1}]: {2}", name, webpagePort, e);
+                WebPageGetLog.WarnFormat("WebPageGetConnect: hiba: web.page.get[{0},,{1}]: {2}", name, webpagePort, e);
                 return error;
             }
             catch (SocketException e)
@@ -225,7 +225,7 @@ namespace Zabbix_TCP_Application
                 //ByteLog.Error("Hiba a Connect küldés részénél: SocketException: ", e);
                 Console.WriteLine("Connect.SocketException: ", e);
                 ByteLog.WarnFormat("WebPageGetConnect: hiba:  web.page.get[{0},,{1}]:  {2}", name, webpagePort, e);
-                WebPageGetLog.ErrorFormat("WebPageGetConnect: hiba:  web.page.get[{0},,{1}]:  {2}", name, webpagePort, e);
+                WebPageGetLog.WarnFormat("WebPageGetConnect: hiba a küldés részénél:  web.page.get[{0},,{1}]:  {2}", name, webpagePort, e);
                 return error;
             }
         }
