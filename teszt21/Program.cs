@@ -3,8 +3,6 @@ using System.Text;
 using Newtonsoft.Json;
 using log4net;
 using log4net.Config;
-using System.Threading.Tasks;
-using System.Net.Sockets;
 
 [assembly: XmlConfigurator(Watch = true)]
 
@@ -12,7 +10,7 @@ namespace Zabbix_TCP_Application
 {
     class Program
     {
-        public static Version version = new Version(0,9,2); 
+        public static Version version = new Version(0,10,0); 
         #region konstansok
         public static string ZABBIX_NAME = Properties.Settings.Default.ZABBIX_NAME;
         public static int ZABBIX_PORT = Properties.Settings.Default.ZABBIX_PORT;
@@ -26,7 +24,6 @@ namespace Zabbix_TCP_Application
 
         static void Main(string[] args)
         {
-            //AgentCommunication.ZabbixAgentUtility.ZabbixAgent();
             try
             {
                 Log.DebugFormat("Start {0}", version);
