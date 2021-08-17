@@ -95,7 +95,6 @@
     <Compile Include="ProxyCommunication\RequestJsonObject.cs" />
     <Compile Include="ProxyCommunication\ResponseJsonData.cs" />
     <Compile Include="ProxyCommunication\ResponseJsonObject.cs" />
-    <Compile Include="Settings.cs" />
     <Compile Include="Utility.cs" />
     <Compile Include="Utility.Proxy.cs">
       <DependentUpon>Utility.cs</DependentUpon>

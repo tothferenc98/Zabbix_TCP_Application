@@ -172,8 +172,8 @@ namespace Zabbix_TCP_Application
             catch (Exception e)
             {
                 Console.WriteLine("Hiba a WebPageGetConnectJson-ben");
-                JsonLog.Warn("WebPageGetConnectJson: Hiba: ",e);
-                WebPageGetLog.ErrorFormat("WebPageGetConnectJson: Hiba: web.page.get[{0},,{1}], {2}", name, webpagePort, e);
+                JsonLog.WarnFormat("WebPageGetConnectJson: Hiba: web.page.get[{0},,{1}], {2}", name, webpagePort, e);
+                WebPageGetLog.WarnFormat("WebPageGetConnectJson: Hiba: web.page.get[{0},,{1}], {2}", name, webpagePort, e);
                 return "";
             }
         }
