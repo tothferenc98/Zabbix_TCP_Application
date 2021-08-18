@@ -11,6 +11,7 @@ namespace Zabbix_TCP_Application.ProxyCommunication
         public int ItemId { get; set; }
         public int HostId { get; set; }
         public string HostName { get; set; }
+        public string HostStatus { get; set; }
         public string Key { get; set; }
 
         public override bool Equals(object obj)
@@ -19,6 +20,7 @@ namespace Zabbix_TCP_Application.ProxyCommunication
                    ItemId == data.ItemId &&
                    HostId == data.HostId &&
                    HostName == data.HostName &&
+                   HostStatus == data.HostStatus &&
                    Key == data.Key;
         }
 
@@ -29,7 +31,7 @@ namespace Zabbix_TCP_Application.ProxyCommunication
 
         public override string ToString()
         {
-            return String.Format("itemid: {0}, hostname: {1}, key: {2} ", ItemId, HostName, Key);
+            return String.Format("itemid: {0}, hostname: {1}, key: {2}, status: {3}", ItemId, HostName, Key, HostStatus);
         }
     }
 }

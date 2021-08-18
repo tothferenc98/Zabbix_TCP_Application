@@ -28,11 +28,13 @@ namespace Zabbix_TCP_Application
             foreach (var item in jsonObject.items.data)
             {
                 string hostname = String.Empty;
+                string hoststatus = String.Empty;
                 foreach (var hostData in jsonObject.hosts.data) //Hostname logoláshoz
                 {
                     if (item[getPositionItemsHostid(jsonObject)].Equals(hostData[getPositionHostsHostId(jsonObject)]))
                     {
                         hostname = hostData[getPositionHostsHostName(jsonObject)];
+                        hoststatus = hostData[getPositionHostsHostStatus(jsonObject)];
                     }
                 }
 
@@ -41,6 +43,7 @@ namespace Zabbix_TCP_Application
                     ItemId = Convert.ToInt32(item[getPositionItemsItemId(jsonObject)]),
                     HostId = Convert.ToInt32(item[getPositionItemsHostid(jsonObject)]),
                     HostName = hostname,
+                    HostStatus = hoststatus,
                     Key = item[getPositionItemsKey(jsonObject)],
                 });
             }
@@ -61,24 +64,24 @@ namespace Zabbix_TCP_Application
                     
                     Parallel.ForEach(itemCheckDataObjectList, async item =>
                     {
-                        string keyName = item.Key;
-                        
-                        if (item.Key.Contains('['))
-                            keyName = item.Key.Substring(0, item.Key.IndexOf('['));
-                        
-                        
-                        switch (keyName)
-                        {
-                            case "web.page.get":
-                                WebPageGet(item, listRequestJsonData);
-                                break;
-                            case "net.tcp.port":
-                                await NetTcpPort(item, listRequestJsonData);
-                                break;
-                            default:
-                                Log.WarnFormat("{0} A feldolgozás sikertelen. (Hostname: {1})", item.Key, item.HostName);
-                                break;
-                        }
+                            string keyName = item.Key;
+
+                            if (item.Key.Contains('['))
+                                keyName = item.Key.Substring(0, item.Key.IndexOf('['));
+
+
+                            switch (keyName)
+                            {
+                                case "web.page.get":
+                                    WebPageGet(item, listRequestJsonData);
+                                    break;
+                                case "net.tcp.port":
+                                    await NetTcpPort(item, listRequestJsonData);
+                                    break;
+                                default:
+                                    Log.WarnFormat("{0} A feldolgozás sikertelen. (Hostname: {1})", item.Key, item.HostName);
+                                    break;
+                            }
                     });
 
                     requestJsonObject.historydata = listRequestJsonData;
@@ -106,21 +109,28 @@ namespace Zabbix_TCP_Application
 
         public static void WebPageGet(ProxyCommunication.ItemCheckData item, List<ProxyCommunication.RequestJsonData> listRequestJsonData)
         {
-            string value = WebPageGetProcessing(item.Key);
-            if (!value.Equals(String.Empty))
+            if (item.HostStatus.Equals("0"))
             {
-                listRequestJsonData.Add(new ProxyCommunication.RequestJsonData()
+                string value = WebPageGetProcessing(item.Key);
+                if (!value.Equals(String.Empty))
                 {
-                    itemid = item.ItemId,
-                    clock = Convert.ToInt32(DateTimeOffset.Now.ToUnixTimeSeconds().ToString()),
-                    ns = getNanosec(),
-                    value = value,
-                    id = listRequestJsonData.Count+1
-                });
+                    listRequestJsonData.Add(new ProxyCommunication.RequestJsonData()
+                    {
+                        itemid = item.ItemId,
+                        clock = Convert.ToInt32(DateTimeOffset.Now.ToUnixTimeSeconds().ToString()),
+                        ns = getNanosec(),
+                        value = value,
+                        id = listRequestJsonData.Count+1
+                    });
+                }
+                else
+                {
+                    Log.WarnFormat("{0} A letöltés sikertelen. (Hostname: {1})", item.Key, item.HostName);
+                }
             }
             else
             {
-                Log.WarnFormat("{0} A letöltés sikertelen. (Hostname: {1})", item.Key, item.HostName);
+                Log.DebugFormat("Nem 0 a host státusza: key: {0}, status: {1}", item.Key, item.HostStatus);
             }
         }
 
@@ -271,19 +281,27 @@ namespace Zabbix_TCP_Application
 
         public static async Task NetTcpPort(ProxyCommunication.ItemCheckData item, List<ProxyCommunication.RequestJsonData> listRequestJsonData)
         {
-            string value = await TcpPortTest(item.Key);
-            if (value.Equals("0"))
+            if (item.HostStatus.Equals("0"))
             {
-                Log.WarnFormat("{0} csatlakozás sikertelen. (Hostname: {1})", item.Key, item.HostName);
+                string value = await TcpPortTest(item.Key);
+                if (value.Equals("0"))
+                {
+                    Log.WarnFormat("{0} csatlakozás sikertelen. (Hostname: {1})", item.Key, item.HostName);
+                }
+                listRequestJsonData.Add(new ProxyCommunication.RequestJsonData()
+                {
+                    itemid = item.ItemId,
+                    clock = Convert.ToInt32(DateTimeOffset.Now.ToUnixTimeSeconds().ToString()),
+                    ns = getNanosec(),
+                    value = value,
+                    id = listRequestJsonData.Count + 1
+                });
+
             }
-            listRequestJsonData.Add(new ProxyCommunication.RequestJsonData()
+            else
             {
-                itemid = item.ItemId,
-                clock = Convert.ToInt32(DateTimeOffset.Now.ToUnixTimeSeconds().ToString()),
-                ns = getNanosec(),
-                value = value,
-                id = listRequestJsonData.Count + 1
-            });
+                Log.DebugFormat("Nem 0 a host státusza: key: {0}, status: {1}", item.Key, item.HostStatus);
+            }
         }
 
         static async Task<string> TcpPortTest(string key)
@@ -441,6 +459,18 @@ namespace Zabbix_TCP_Application
                     return hostname_pos;
                 else
                     hostname_pos++;
+            }
+            return -1;
+        }
+        public static int getPositionHostsHostStatus(ProxyCommunication.ResponseJsonObject jsonObject)
+        {
+            int hostnstatus_pos = 0;
+            foreach (var item in jsonObject.hosts.fields)
+            {
+                if (item.Equals("status"))
+                    return hostnstatus_pos;
+                else
+                    hostnstatus_pos++;
             }
             return -1;
         }
