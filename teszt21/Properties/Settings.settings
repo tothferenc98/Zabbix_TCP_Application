@@ -2,7 +2,7 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="Zabbix_TCP_Application.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-	<Setting Name="PROXY_NAME" Type="System.String" Scope="Application">
+    <Setting Name="PROXY_NAME" Type="System.String" Scope="Application">
       <Value Profile="(Default)">gyakornok_tf_proxy</Value>
     </Setting>
     <Setting Name="ZABBIX_NAME" Type="System.String" Scope="Application">
@@ -10,9 +10,6 @@
     </Setting>
     <Setting Name="ZABBIX_PORT" Type="System.Int32" Scope="Application">
       <Value Profile="(Default)">10051</Value>
-    </Setting>
-    <Setting Name="BUFFER_SIZE" Type="System.Int32" Scope="Application">
-      <Value Profile="(Default)">10000</Value>
     </Setting>
     <Setting Name="PROXY_VERSION" Type="System.String" Scope="Application">
       <Value Profile="(Default)">3.4.13</Value>

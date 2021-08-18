@@ -12,11 +12,11 @@ namespace Zabbix_TCP_Application
     {
         #region konstansok
         public static string ZABBIX_NAME = Properties.Settings.Default.ZABBIX_NAME;
-        public static int ZABBIX_PORT = Properties.Settings.Default.ZABBIX_PORT; 
-        public static int BUFFER_SIZE = Properties.Settings.Default.BUFFER_SIZE;
+        public static int ZABBIX_PORT = Properties.Settings.Default.ZABBIX_PORT;
         public static string PROXY_NAME = Properties.Settings.Default.PROXY_NAME;
         public static string PROXY_VERSION = Properties.Settings.Default.PROXY_VERSION;
         public static Encoding ENCODING = Encoding.ASCII;
+        const int BUFFER_SIZE = 10000;
         #endregion konstansok
 
         private static readonly ILog ByteLog = LogManager.GetLogger("ByteLog");
@@ -126,13 +126,22 @@ namespace Zabbix_TCP_Application
                 try
                 {
                     // Receive the TcpServer.response.
+                    List<byte> readedBytesInList = new List<byte>();
+                    byte[] byteArrayData2 = new Byte[BUFFER_SIZE];
+                    while (true)
+                    {
+                        // Read the first batch of the TcpServer response bytes.
+                        int readedBytes = stream.Read(byteArrayData2, 0, byteArrayData2.Length);
+                        byte[] tempByteArrayData = new byte[readedBytes];
+                        Array.Copy(byteArrayData2, tempByteArrayData, readedBytes);
+                        readedBytesInList.AddRange(tempByteArrayData);
+                        if (readedBytes == 0)
+                            break;
+                    }
+                    byteArrayData2 = readedBytesInList.ToArray();
 
-                    // Buffer to store the response bytes.
-                    byte[] byteArrayData2 = new Byte[BUFFER_SIZE]; 
-                    //visszaolvasás pufferére másik data deklarálása
-                    // Read the first batch of the TcpServer response bytes.
-                    int bytes = stream.Read(byteArrayData2, 0, byteArrayData2.Length);
-                    byteArrayData2 = TrimEnd(byteArrayData2);
+
+                    //byteArrayData2 = TrimEnd(byteArrayData2);
                     //arraycopy
 
                     // Hexadecimális értékek logolása
@@ -162,8 +171,6 @@ namespace Zabbix_TCP_Application
                 Console.WriteLine("Connect.SocketException: ", e);
                 return error;
             }
-
-
         }
 
         public static byte[] Packet(string data)
@@ -182,15 +189,6 @@ namespace Zabbix_TCP_Application
             Array.Copy(ENCODING.GetBytes(data), 0, packet, header.Length, data.Length);
 
             return packet;
-        }
-
-        public static byte[] TrimEnd(byte[] array)
-        {
-            int lastIndex = Array.FindLastIndex(array, b => b != 0);
-
-            Array.Resize(ref array, lastIndex + 1);
-
-            return array;
         }
     }
 }

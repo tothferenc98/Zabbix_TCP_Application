@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -53,14 +54,19 @@ namespace Zabbix_TCP_Application
             {
                 if (itemCheckDataObjectList.Count > 0)
                 {
+                    Guid guid = Guid.NewGuid();
+                    requestJsonObject.session = guid.ToString().Replace("-", "");
+
                     List<ProxyCommunication.RequestJsonData> listRequestJsonData = new List<ProxyCommunication.RequestJsonData>();
                     
                     Parallel.ForEach(itemCheckDataObjectList, async item =>
                     {
                         string keyName = item.Key;
+                        
                         if (item.Key.Contains('['))
                             keyName = item.Key.Substring(0, item.Key.IndexOf('['));
-
+                        
+                        
                         switch (keyName)
                         {
                             case "web.page.get":
@@ -120,10 +126,21 @@ namespace Zabbix_TCP_Application
 
         public static string WebPageGetProcessing(string key)
         {
-            string key2 = key.Substring(key.IndexOf('[') + 1, key.IndexOf(']') - key.IndexOf('[') - 1);
-            var splitted = key2.Split(',');
-            string ip = splitted[0];
-            int port = Convert.ToInt32(splitted[2]);
+            string ip=String.Empty;
+            int port=0;
+            try
+            {
+                string key2 = key.Substring(key.IndexOf('[') + 1, key.IndexOf(']') - key.IndexOf('[') - 1);
+                var splitted = key2.Split(',');
+                ip = splitted[0];
+                port = Convert.ToInt32(splitted[2]);
+            }
+            catch (Exception)
+            {
+                Log.WarnFormat("Hiba a {0} WebPageGetProcessing-ben a key és ip kiszedésénél (alapértelmezett: web.page.get[ip,,port])", key);
+                return "";
+            }
+            
             //Console.WriteLine(port);
             try
             {
@@ -145,10 +162,9 @@ namespace Zabbix_TCP_Application
         {
             try
             {
-                byte[] jsonBytes = new byte[BUFFER_SIZE]; 
+                 
                 string json = String.Format(@"GET HTTP/1.1");
-                Array.Copy(ENCODING.GetBytes(json), jsonBytes, json.Length);
-                jsonBytes = TrimEnd(jsonBytes);
+                byte[] jsonBytes = ENCODING.GetBytes(json);
                 WebPageGetLog.InfoFormat("WebPageGetConnectJson: Sent: {0}, web.page.get[{1},,{2}]", json, name, webpagePort);
 
                 byte[] jsonBytesRespond = WebPageGetConnect(jsonBytes, name, webpagePort);
@@ -196,9 +212,20 @@ namespace Zabbix_TCP_Application
 
                 try
                 {
+                    List<byte> readedBytesInList = new List<byte>();
                     byte[] byteArrayData2 = new Byte[BUFFER_SIZE];
-                    int bytes = stream.Read(byteArrayData2, 0, byteArrayData2.Length);
-                    byteArrayData2 = TrimEnd(byteArrayData2);
+                    while (true)
+                    {
+                        // Read the first batch of the TcpServer response bytes.
+                        int readedBytes = stream.Read(byteArrayData2, 0, byteArrayData2.Length);
+                        byte[] tempByteArrayData = new byte[readedBytes];
+                        Array.Copy(byteArrayData2, tempByteArrayData, readedBytes);
+                        readedBytesInList.AddRange(tempByteArrayData);
+                        if (readedBytes == 0)
+                            break;
+                    }
+                    byteArrayData2 = readedBytesInList.ToArray();
+
                     // Hexadecimális értékek logolása
                     //WebPageGetLog.InfoFormat("WebPageGetConnect: Received: {0}", String.Join(String.Empty, byteArrayData2.Select(d => String.Format("{0:X}", d))));
                     stream.Close();
@@ -207,7 +234,6 @@ namespace Zabbix_TCP_Application
                 }
                 catch (Exception e)
                 {
-                    //ByteLog.Error("Hiba a Connect válasz részénél: ", e);
                     ByteLog.WarnFormat("WebPageGetConnect: belső try-ban hiba: web.page.get[{0},,{1}]   {2}", name, webpagePort, e);
                     WebPageGetLog.ErrorFormat("WebPageGetConnect: belső try-ban hiba (válasznál): web.page.get[{0},,{1}]   {2}", name, webpagePort, e);
                     return error;
@@ -215,15 +241,12 @@ namespace Zabbix_TCP_Application
             }
             catch (ArgumentNullException e)
             {
-                Console.WriteLine("Connect.ArgumentNullException: ", e);
                 ByteLog.WarnFormat("WebPageGetConnect: hiba: web.page.get[{0},,{1}]: {2}", name, webpagePort, e);
                 WebPageGetLog.WarnFormat("WebPageGetConnect: hiba: web.page.get[{0},,{1}]: {2}", name, webpagePort, e);
                 return error;
             }
             catch (SocketException e)
             {
-                //ByteLog.Error("Hiba a Connect küldés részénél: SocketException: ", e);
-                Console.WriteLine("Connect.SocketException: ", e);
                 ByteLog.WarnFormat("WebPageGetConnect: hiba:  web.page.get[{0},,{1}]:  {2}", name, webpagePort, e);
                 WebPageGetLog.WarnFormat("WebPageGetConnect: hiba a küldés részénél:  web.page.get[{0},,{1}]:  {2}", name, webpagePort, e);
                 return error;
@@ -422,6 +445,7 @@ namespace Zabbix_TCP_Application
             return -1;
         }
         public static int getNanosec() {
+            //kihozni előre
             string value = Convert.ToString(Math.Abs(100000000 * Convert.ToInt32(DateTimeOffset.Now.ToUnixTimeSeconds().ToString())));
             if (value.Length>=9)
             {
@@ -431,12 +455,19 @@ namespace Zabbix_TCP_Application
             {
                 int temp = 9 - value.Length;
                 string value2 = value;
+                //value.PadLeft
                 for (int i = 0; i < temp; i++)
                 {
                     value2+='0';
                 }
                 return Convert.ToInt32(value2);
             }
+        }
+        public static string StopWatch(Stopwatch stopWatch) {
+            stopWatch.Stop();
+            TimeSpan ts = stopWatch.Elapsed;
+            string elapsedTime = String.Format("{0}m {1}s {2}ms", ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
+            return elapsedTime;
         }
     }
 }
