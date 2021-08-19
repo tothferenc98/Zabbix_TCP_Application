@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading.Tasks;
@@ -242,6 +243,13 @@ namespace Zabbix_TCP_Application
                     client.Close();
                     return byteArrayData2;
                 }
+                /*
+                catch (IOException e)
+                {
+                    ByteLog.WarnFormat("WebPageGetConnect: belső try-ban hiba: web.page.get[{0},,{1}]   {2}", name, webpagePort, e);
+                    WebPageGetLog.ErrorFormat("WebPageGetConnect: belső try-ban hiba (válasznál): web.page.get[{0},,{1}]   {2}", name, webpagePort, e);
+                    return new byte[1] {1};
+                }*/
                 catch (Exception e)
                 {
                     ByteLog.WarnFormat("WebPageGetConnect: belső try-ban hiba: web.page.get[{0},,{1}]   {2}", name, webpagePort, e);
