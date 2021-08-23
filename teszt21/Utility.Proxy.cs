@@ -178,7 +178,15 @@ namespace Zabbix_TCP_Application
                 byte[] jsonBytes = ENCODING.GetBytes(json);
                 WebPageGetLog.InfoFormat("WebPageGetConnectJson: Sent: {0}, web.page.get[{1},,{2}]", json, name, webpagePort);
 
-                byte[] jsonBytesRespond = WebPageGetConnect(jsonBytes, name, webpagePort);
+                byte[] jsonBytesRespond = WebPageGetConnect(jsonBytes, name, webpagePort, 1);
+
+                if (jsonBytesRespond.SequenceEqual(new byte[1] { 1 }))
+                    jsonBytesRespond = WebPageGetConnect(jsonBytes, name, webpagePort, 2);
+
+                if (jsonBytesRespond.SequenceEqual(new byte[1] { 1 }))
+                    jsonBytesRespond = WebPageGetConnect(jsonBytes, name, webpagePort, 3);
+
+
                 if (!jsonBytesRespond.SequenceEqual(new byte[0]))
                 {
                     string resultJson = ENCODING.GetString(jsonBytesRespond, 0, jsonBytesRespond.Length);
@@ -206,12 +214,11 @@ namespace Zabbix_TCP_Application
         }
 
 
-        public static byte[] WebPageGetConnect(byte[] data, string name, int webpagePort)
+        public static byte[] WebPageGetConnect(byte[] data, string name, int webpagePort,int numberOfTries)
         {
             byte[] error = new byte[0];
             try
             {
-
                 Int32 port = webpagePort;
                 String server = name;
                 TcpClient client = new TcpClient(server, port);
@@ -243,30 +250,38 @@ namespace Zabbix_TCP_Application
                     client.Close();
                     return byteArrayData2;
                 }
-                /*
                 catch (IOException e)
                 {
-                    ByteLog.WarnFormat("WebPageGetConnect: belső try-ban hiba: web.page.get[{0},,{1}]   {2}", name, webpagePort, e);
-                    WebPageGetLog.ErrorFormat("WebPageGetConnect: belső try-ban hiba (válasznál): web.page.get[{0},,{1}]   {2}", name, webpagePort, e);
-                    return new byte[1] {1};
-                }*/
+                    if (!numberOfTries.Equals(3)) //hibás letöltésnél 3x próbálja meg letölteni, harmadiknál errort dob vissza.
+                    {
+                        ByteLog.WarnFormat("WebPageGetConnect: belső try-ban hiba ({3}. IOException): web.page.get[{0},,{1}]   {2}", name, webpagePort, e, numberOfTries);
+                        WebPageGetLog.WarnFormat("WebPageGetConnect: belső try-ban hiba ({3}. IOException): web.page.get[{0},,{1}]   {2}", name, webpagePort, e, numberOfTries);
+                        return new byte[1] { 1 };
+                    }
+                    else
+                    {
+                        ByteLog.ErrorFormat("WebPageGetConnect: belső try-ban hiba ({3}. IOException): web.page.get[{0},,{1}]   {2}", name, webpagePort, e, numberOfTries);
+                        WebPageGetLog.ErrorFormat("WebPageGetConnect: belső try-ban hiba ({3}. IOException): web.page.get[{0},,{1}]   {2}", name, webpagePort, e, numberOfTries);
+                        return error;
+                    }
+                }
                 catch (Exception e)
                 {
-                    ByteLog.WarnFormat("WebPageGetConnect: belső try-ban hiba: web.page.get[{0},,{1}]   {2}", name, webpagePort, e);
-                    WebPageGetLog.ErrorFormat("WebPageGetConnect: belső try-ban hiba (válasznál): web.page.get[{0},,{1}]   {2}", name, webpagePort, e);
+                    ByteLog.WarnFormat("WebPageGetConnect: belső try-ban hiba ({3}. Exception): web.page.get[{0},,{1}]   {2}", name, webpagePort, e, numberOfTries);
+                    WebPageGetLog.WarnFormat("WebPageGetConnect: belső try-ban hiba ({3}. Exception): web.page.get[{0},,{1}]   {2}", name, webpagePort, e, numberOfTries);
                     return error;
                 }
             }
             catch (ArgumentNullException e)
             {
-                ByteLog.WarnFormat("WebPageGetConnect: hiba: web.page.get[{0},,{1}]: {2}", name, webpagePort, e);
-                WebPageGetLog.WarnFormat("WebPageGetConnect: hiba: web.page.get[{0},,{1}]: {2}", name, webpagePort, e);
+                ByteLog.WarnFormat("WebPageGetConnect: hiba ({3}. ArgumentNullException): web.page.get[{0},,{1}]: {2}", name, webpagePort, e, numberOfTries);
+                WebPageGetLog.WarnFormat("WebPageGetConnect: hiba ({3}. ArgumentNullException): web.page.get[{0},,{1}]: {2}", name, webpagePort, e, numberOfTries);
                 return error;
             }
             catch (SocketException e)
             {
-                ByteLog.WarnFormat("WebPageGetConnect: hiba:  web.page.get[{0},,{1}]:  {2}", name, webpagePort, e);
-                WebPageGetLog.WarnFormat("WebPageGetConnect: hiba a küldés részénél:  web.page.get[{0},,{1}]:  {2}", name, webpagePort, e);
+                ByteLog.WarnFormat("WebPageGetConnect: hiba ({3}. SocketException):  web.page.get[{0},,{1}]:  {2}", name, webpagePort, e, numberOfTries);
+                WebPageGetLog.WarnFormat("WebPageGetConnect ({3}. SocketException): hiba a küldés részénél:  web.page.get[{0},,{1}]:  {2}", name, webpagePort, e, numberOfTries);
                 return error;
             }
         }
@@ -472,13 +487,13 @@ namespace Zabbix_TCP_Application
         }
         public static int getPositionHostsHostStatus(ProxyCommunication.ResponseJsonObject jsonObject)
         {
-            int hostnstatus_pos = 0;
+            int hoststatus_pos = 0;
             foreach (var item in jsonObject.hosts.fields)
             {
                 if (item.Equals("status"))
-                    return hostnstatus_pos;
+                    return hoststatus_pos;
                 else
-                    hostnstatus_pos++;
+                    hoststatus_pos++;
             }
             return -1;
         }
