@@ -498,21 +498,16 @@ namespace Zabbix_TCP_Application
             return -1;
         }
         public static int getNanosec() {
-            //kihozni előre
+            int length = 9;
             string value = Convert.ToString(Math.Abs(100000000 * Convert.ToInt32(DateTimeOffset.Now.ToUnixTimeSeconds().ToString())));
-            if (value.Length>=9)
+            if (value.Length>=length)
             {
-                return Convert.ToInt32(value.Substring(0, 9));
+                return Convert.ToInt32(value.Substring(0, length));
             }
             else
             {
-                int temp = 9 - value.Length;
                 string value2 = value;
-                //value.PadLeft
-                for (int i = 0; i < temp; i++)
-                {
-                    value2+='0';
-                }
+                value2=value2.PadRight(length, '0');
                 return Convert.ToInt32(value2);
             }
         }
