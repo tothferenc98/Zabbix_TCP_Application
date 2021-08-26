@@ -5,13 +5,14 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Zabbix_TCP_Application
 {
     partial class Utility
     {
-        public static string ProcessingAndRequest(ProxyCommunication.ResponseJsonObject jsonObject)
+        public static string ProcessingAndRequest(ProxyCommunication.ResponseJsonObject jsonObject, Stopwatch stopWatch)
         {
             WebPageGetLog.Debug("Start");
             List<ProxyCommunication.ItemCheckData> itemCheckDataObjectList = new List<ProxyCommunication.ItemCheckData>();
@@ -21,7 +22,7 @@ namespace Zabbix_TCP_Application
             { Console.WriteLine(item.ToString()); }
             Console.WriteLine();
 
-            return MakeRequest(itemCheckDataObjectList);
+            return MakeRequest(itemCheckDataObjectList, stopWatch);
         }
 
         public static void MakeItemCheckDataObject(ProxyCommunication.ResponseJsonObject jsonObject, List<ProxyCommunication.ItemCheckData> itemCheckDataObjectList)
@@ -50,7 +51,7 @@ namespace Zabbix_TCP_Application
             }
         }
 
-        public static string MakeRequest(List<ProxyCommunication.ItemCheckData> itemCheckDataObjectList)
+        public static string MakeRequest(List<ProxyCommunication.ItemCheckData> itemCheckDataObjectList, Stopwatch stopWatch)
         {
             string secondResponseData = String.Empty;
             ProxyCommunication.RequestJsonObject requestJsonObject = new ProxyCommunication.RequestJsonObject();
@@ -60,6 +61,9 @@ namespace Zabbix_TCP_Application
                 {
                     Guid guid = Guid.NewGuid();
                     requestJsonObject.session = guid.ToString().Replace("-", "");
+
+                    Task exitApplicationTask = new Task(() => ExitApplication(stopWatch));
+                    exitApplicationTask.Start();
 
                     List<ProxyCommunication.RequestJsonData> listRequestJsonData = new List<ProxyCommunication.RequestJsonData>();
                     
@@ -107,7 +111,7 @@ namespace Zabbix_TCP_Application
 
             }
         }
-
+        
         public static void WebPageGet(ProxyCommunication.ItemCheckData item, List<ProxyCommunication.RequestJsonData> listRequestJsonData)
         {
             if (item.HostStatus.Equals("0"))
@@ -516,6 +520,23 @@ namespace Zabbix_TCP_Application
             TimeSpan ts = stopWatch.Elapsed;
             string elapsedTime = String.Format("{0}m {1}s {2}ms", ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
             return elapsedTime;
+        }
+
+        public static void ExitApplication(Stopwatch stopWatch)
+        {
+
+            while (true)
+            {
+                TimeSpan ts = stopWatch.Elapsed;
+                string elapsedTime = String.Format("{0}m {1}s", ts.Minutes, ts.Seconds);
+                //Console.WriteLine(elapsedTime);
+                Thread.Sleep(1000);
+                if (ts.Minutes >= 5)
+                {
+                    Log.ErrorFormat("Kényszerített bezárás {0}", Utility.StopWatch(stopWatch));
+                    Environment.Exit(0);
+                }
+            }
         }
     }
 }
