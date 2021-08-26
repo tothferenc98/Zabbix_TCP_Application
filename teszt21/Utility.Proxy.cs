@@ -62,7 +62,9 @@ namespace Zabbix_TCP_Application
                     Guid guid = Guid.NewGuid();
                     requestJsonObject.session = guid.ToString().Replace("-", "");
 
-                    Task exitApplicationTask = new Task(() => ExitApplication(stopWatch));
+                    List<string> listUnfinishedTasks = new List<string>();
+
+                    Task exitApplicationTask = new Task(() => ExitApplication(stopWatch, listUnfinishedTasks));
                     exitApplicationTask.Start();
 
                     List<ProxyCommunication.RequestJsonData> listRequestJsonData = new List<ProxyCommunication.RequestJsonData>();
@@ -74,14 +76,13 @@ namespace Zabbix_TCP_Application
                             if (item.Key.Contains('['))
                                 keyName = item.Key.Substring(0, item.Key.IndexOf('['));
 
-
                             switch (keyName)
                             {
                                 case "web.page.get":
-                                    WebPageGet(item, listRequestJsonData);
+                                    WebPageGet(item, listRequestJsonData, listUnfinishedTasks);
                                     break;
                                 case "net.tcp.port":
-                                    await NetTcpPort(item, listRequestJsonData);
+                                    await NetTcpPort(item, listRequestJsonData, listUnfinishedTasks);
                                     break;
                                 default:
                                     Log.WarnFormat("{0} A feldolgozás sikertelen. (Hostname: {1})", item.Key, item.HostName);
@@ -112,10 +113,11 @@ namespace Zabbix_TCP_Application
             }
         }
         
-        public static void WebPageGet(ProxyCommunication.ItemCheckData item, List<ProxyCommunication.RequestJsonData> listRequestJsonData)
+        public static void WebPageGet(ProxyCommunication.ItemCheckData item, List<ProxyCommunication.RequestJsonData> listRequestJsonData, List<string> listUnfinishedTasks)
         {
             if (item.HostStatus.Equals("0"))
             {
+                listUnfinishedTasks.Add(item.Key);
                 string value = WebPageGetProcessing(item.Key);
                 if (!value.Equals(String.Empty))
                 {
@@ -132,6 +134,7 @@ namespace Zabbix_TCP_Application
                 {
                     Log.WarnFormat("{0} A letöltés sikertelen. (Hostname: {1})", item.Key, item.HostName);
                 }
+                listUnfinishedTasks.Remove(item.Key);
             }
             else
             {
@@ -177,7 +180,6 @@ namespace Zabbix_TCP_Application
         {
             try
             {
-                 
                 string json = String.Format(@"GET HTTP/1.1");
                 byte[] jsonBytes = ENCODING.GetBytes(json);
                 WebPageGetLog.InfoFormat("WebPageGetConnectJson: Sent: {0}, web.page.get[{1},,{2}]", json, name, webpagePort);
@@ -306,10 +308,11 @@ namespace Zabbix_TCP_Application
             } 
         }
 
-        public static async Task NetTcpPort(ProxyCommunication.ItemCheckData item, List<ProxyCommunication.RequestJsonData> listRequestJsonData)
+        public static async Task NetTcpPort(ProxyCommunication.ItemCheckData item, List<ProxyCommunication.RequestJsonData> listRequestJsonData, List<string> listUnfinishedTasks)
         {
             if (item.HostStatus.Equals("0"))
             {
+                listUnfinishedTasks.Add(item.Key);
                 string value = await TcpPortTest(item.Key);
                 if (value.Equals("0"))
                 {
@@ -323,6 +326,7 @@ namespace Zabbix_TCP_Application
                     value = value,
                     id = listRequestJsonData.Count + 1
                 });
+                listUnfinishedTasks.Remove(item.Key);
 
             }
             else
@@ -522,18 +526,18 @@ namespace Zabbix_TCP_Application
             return elapsedTime;
         }
 
-        public static void ExitApplication(Stopwatch stopWatch)
+        public static void ExitApplication(Stopwatch stopWatch, List<string> listUnfinishedTasks)
         {
 
             while (true)
             {
                 TimeSpan ts = stopWatch.Elapsed;
-                string elapsedTime = String.Format("{0}m {1}s", ts.Minutes, ts.Seconds);
+                //string elapsedTime = String.Format("{0}m {1}s", ts.Minutes, ts.Seconds);
                 //Console.WriteLine(elapsedTime);
                 Thread.Sleep(1000);
                 if (ts.Minutes >= 5)
                 {
-                    Log.ErrorFormat("Kényszerített bezárás {0}", Utility.StopWatch(stopWatch));
+                    Log.ErrorFormat("Kényszerített bezárás {0}  Nem sikerült befejezni: {1}", Utility.StopWatch(stopWatch), String.Join(", ", listUnfinishedTasks.ToArray()));
                     Environment.Exit(0);
                 }
             }
