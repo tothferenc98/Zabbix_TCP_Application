@@ -96,7 +96,11 @@ namespace Zabbix_TCP_Application
                     requestJsonObject.version = PROXY_VERSION;
 
                     string serializedJson = JsonConvert.SerializeObject(requestJsonObject);
-                    secondResponseData = ConnectJson(serializedJson);
+
+                    if (listRequestJsonData.Count > 0)
+                        secondResponseData = ConnectJson(serializedJson);
+                    else
+                        JsonLog.WarnFormat("Üres a küldeni kívánt lista: {0}", serializedJson);
                 }
                 else
                 {
@@ -225,10 +229,16 @@ namespace Zabbix_TCP_Application
             byte[] error = new byte[0];
             try
             {
+                WebPageGetLog.DebugFormat("WebPageGetConnect: 1. lépés web.page.get[{0},,{1}]", name, webpagePort);
+                Stopwatch stopWatchConnect = new Stopwatch();
+                stopWatchConnect.Start();
+
                 Int32 port = webpagePort;
                 String server = name;
                 TcpClient client = new TcpClient(server, port);
+                WebPageGetLog.DebugFormat("WebPageGetConnect: 2. lépés web.page.get[{0},,{1}]", name, webpagePort);
                 NetworkStream stream = client.GetStream();
+                WebPageGetLog.DebugFormat("WebPageGetConnect: 3. lépés web.page.get[{0},,{1}]", name, webpagePort);
                 stream.Write(data, 0, data.Length);
 
                 // Hexadecimális értékek logolása
@@ -236,20 +246,47 @@ namespace Zabbix_TCP_Application
 
                 try
                 {
+
+                    //var throwExceptionTask = Task.Run(() =>
+                    //{
+                    //    var nested1 = Task.Run(() =>
+                    //    {
+
+                    //        Thread.Sleep(25000);
+                    //        TimeSpan tsConnect = stopWatchConnect.Elapsed;
+
+                    //        stopWatchConnect.Stop();
+                    //        Log.ErrorFormat("Több mint 25 másodperce vár a válaszra");
+                    //        throw new IOException();
+
+                    //    });
+                    //    nested1.Wait();
+                    //});
+                    //throwExceptionTask.Wait();
+
                     List<byte> readedBytesInList = new List<byte>();
                     byte[] byteArrayData2 = new Byte[BUFFER_SIZE];
                     while (true)
                     {
                         // Read the first batch of the TcpServer response bytes.
+                        //Thread.Sleep(25000);
+                        WebPageGetLog.DebugFormat("WebPageGetConnect: 4. lépés web.page.get[{0},,{1}]", name, webpagePort);
                         int readedBytes = stream.Read(byteArrayData2, 0, byteArrayData2.Length);
+                        WebPageGetLog.DebugFormat("WebPageGetConnect: 5. lépés web.page.get[{0},,{1}]", name, webpagePort);
                         byte[] tempByteArrayData = new byte[readedBytes];
                         Array.Copy(byteArrayData2, tempByteArrayData, readedBytes);
                         readedBytesInList.AddRange(tempByteArrayData);
+
                         if (readedBytes == 0)
+                        {
+                            WebPageGetLog.DebugFormat("WebPageGetConnect: 6. lépés web.page.get[{0},,{1}]", name, webpagePort);
+                            stopWatchConnect.Stop();
                             break;
+                        }
+                            
                     }
                     byteArrayData2 = readedBytesInList.ToArray();
-
+                    WebPageGetLog.DebugFormat("WebPageGetConnect: 7. lépés web.page.get[{0},,{1}]", name, webpagePort);
                     // Hexadecimális értékek logolása
                     //WebPageGetLog.InfoFormat("WebPageGetConnect: Received: {0}", String.Join(String.Empty, byteArrayData2.Select(d => String.Format("{0:X}", d))));
                     stream.Close();
@@ -542,5 +579,6 @@ namespace Zabbix_TCP_Application
                 }
             }
         }
+
     }
 }
