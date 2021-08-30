@@ -247,32 +247,17 @@ namespace Zabbix_TCP_Application
                 try
                 {
 
-                    //var throwExceptionTask = Task.Run(() =>
-                    //{
-                    //    var nested1 = Task.Run(() =>
-                    //    {
-
-                    //        Thread.Sleep(25000);
-                    //        TimeSpan tsConnect = stopWatchConnect.Elapsed;
-
-                    //        stopWatchConnect.Stop();
-                    //        Log.ErrorFormat("Több mint 25 másodperce vár a válaszra");
-                    //        throw new IOException();
-
-                    //    });
-                    //    nested1.Wait();
-                    //});
-                    //throwExceptionTask.Wait();
-
+                   
                     List<byte> readedBytesInList = new List<byte>();
                     byte[] byteArrayData2 = new Byte[BUFFER_SIZE];
-                    while (true)
+                    
+                    int readedBytes = -1;
+                    do
                     {
                         // Read the first batch of the TcpServer response bytes.
-                        //Thread.Sleep(25000);
                         WebPageGetLog.DebugFormat("WebPageGetConnect: 4. lépés web.page.get[{0},,{1}]", name, webpagePort);
-                        int readedBytes = stream.Read(byteArrayData2, 0, byteArrayData2.Length);
-                        WebPageGetLog.DebugFormat("WebPageGetConnect: 5. lépés web.page.get[{0},,{1}]", name, webpagePort);
+                        readedBytes = stream.Read(byteArrayData2, 0, byteArrayData2.Length);
+                        WebPageGetLog.DebugFormat("WebPageGetConnect: 5. lépés web.page.get[{0},,{1}] readedBytes: {2}", name, webpagePort, readedBytes);
                         byte[] tempByteArrayData = new byte[readedBytes];
                         Array.Copy(byteArrayData2, tempByteArrayData, readedBytes);
                         readedBytesInList.AddRange(tempByteArrayData);
@@ -283,8 +268,9 @@ namespace Zabbix_TCP_Application
                             stopWatchConnect.Stop();
                             break;
                         }
-                            
-                    }
+
+                    } while (readedBytes.Equals(BUFFER_SIZE));
+
                     byteArrayData2 = readedBytesInList.ToArray();
                     WebPageGetLog.DebugFormat("WebPageGetConnect: 7. lépés web.page.get[{0},,{1}]", name, webpagePort);
                     // Hexadecimális értékek logolása

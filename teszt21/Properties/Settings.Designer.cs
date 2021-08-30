@@ -25,7 +25,7 @@ namespace Zabbix_TCP_Application.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("gyakornok_tf_proxy")]
+        [global::System.Configuration.DefaultSettingValueAttribute("krones_w3proxy")]
         public string PROXY_NAME {
             get {
                 return ((string)(this["PROXY_NAME"]));
