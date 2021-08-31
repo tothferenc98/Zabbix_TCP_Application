@@ -63,7 +63,7 @@ namespace Zabbix_TCP_Application
                     requestJsonObject.session = guid.ToString().Replace("-", "");
 
                     List<string> listUnfinishedTasks = new List<string>();
-
+                    
                     Task exitApplicationTask = new Task(() => ExitApplication(stopWatch, listUnfinishedTasks));
                     exitApplicationTask.Start();
 
@@ -230,8 +230,6 @@ namespace Zabbix_TCP_Application
             try
             {
                 WebPageGetLog.DebugFormat("WebPageGetConnect: 1. lépés web.page.get[{0},,{1}]", name, webpagePort);
-                Stopwatch stopWatchConnect = new Stopwatch();
-                stopWatchConnect.Start();
 
                 Int32 port = webpagePort;
                 String server = name;
@@ -264,15 +262,12 @@ namespace Zabbix_TCP_Application
 
                         if (readedBytes == 0)
                         {
-                            WebPageGetLog.DebugFormat("WebPageGetConnect: 6. lépés web.page.get[{0},,{1}]", name, webpagePort);
-                            stopWatchConnect.Stop();
                             break;
-                        }
-
+                        } 
                     } while (readedBytes.Equals(BUFFER_SIZE));
 
                     byteArrayData2 = readedBytesInList.ToArray();
-                    WebPageGetLog.DebugFormat("WebPageGetConnect: 7. lépés web.page.get[{0},,{1}]", name, webpagePort);
+                    WebPageGetLog.DebugFormat("WebPageGetConnect: 6. lépés web.page.get[{0},,{1}]", name, webpagePort);
                     // Hexadecimális értékek logolása
                     //WebPageGetLog.InfoFormat("WebPageGetConnect: Received: {0}", String.Join(String.Empty, byteArrayData2.Select(d => String.Format("{0:X}", d))));
                     stream.Close();
@@ -558,7 +553,7 @@ namespace Zabbix_TCP_Application
                 //string elapsedTime = String.Format("{0}m {1}s", ts.Minutes, ts.Seconds);
                 //Console.WriteLine(elapsedTime);
                 Thread.Sleep(1000);
-                if (ts.Minutes >= 5)
+                if (ts.Minutes == 4 && ts.Seconds>=55)
                 {
                     Log.ErrorFormat("Kényszerített bezárás {0}  Nem sikerült befejezni: {1}", Utility.StopWatch(stopWatch), String.Join(", ", listUnfinishedTasks.ToArray()));
                     Environment.Exit(0);
